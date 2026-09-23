@@ -184,8 +184,8 @@ Har module ke liye process:
 
 | Step | Kya | Status |
 |---|---|---|
-| 1 | Project setup + `app.js` + `server.js` + `/health` | 🟡 lagbhag done |
-| 2 | `config/env.js` — `.env` validate karna | ⬜ agla |
+| 1 | Project setup + `app.js` + `server.js` + `/health` | ✅ Done |
+| 2 | `config/env.js` — `.env` validate karna | 🟡 chal raha hai |
 | 3 | `ApiError`, `asyncHandler`, central `errorHandler` | ⬜ |
 | 4 | CORS, rate limit, logger (winston) | ⬜ |
 
@@ -193,25 +193,25 @@ Har module ke liye process:
 
 ## 9. Abhi kahan hoon (23 Sep 2026)
 
-**Ban chuka hai:**
+**Phase 1 / Step 1 — ✅ COMPLETE (commit `899477f`, GitHub pe push ho chuka)**
+
+Repo: `git@github.com:aditimishra0410/blinkr-collection-newcrm-backend.git`
+
 - `npm init`, `"type": "module"`, scripts: `dev` (`node --watch`), `start`
 - `.gitignore` (node_modules, .env, uploads, *.log)
 - Packages: express, helmet, cookie-parser, dotenv
 - `src/app.js` — helmet → express.json(1mb) → cookieParser → `/` → `/health` → 404 handler → export
-- `src/server.js` — PORT (env se, fallback 3000), `const server = app.listen(...)`, SIGINT pe graceful shutdown
+- `src/server.js` — PORT (env se, fallback 3000), `const server = app.listen(...)`,
+  `shutdown(signal)` function + `process.on` SIGINT aur SIGTERM dono ke liye ✅ (test ho chuka)
 
-**Abhi ka pending kaam (`src/server.js`):**
-- `shutdown(signal)` function bana to liya hai, **par use call nahi kiya** — wo abhi kabhi chalta hi nahi
-- Purana `process.on("SIGINT", () => {...})` block hatana hai, aur ye do lines jodni hain:
-  ```js
-  process.on("SIGINT", () => shutdown("SIGINT"));
-  process.on("SIGTERM", () => shutdown("SIGTERM"));
-  ```
-- Typo: `sigal` → `signal`
-- SIGTERM test: `lsof -i :3000` → `kill -TERM <PID>`
-- Uske baad **pehla commit** (`git status` me `node_modules` nahi dikhna chahiye)
+**Chhoti cheezein jo pending hain:** kuch jagah `;` missing; `/` route text bhejta hai (JSON kar sakte hain)
 
-**Chhoti cheezein jo pending hain:** kuch jagah `;` missing hai; `/` route text bhejta hai (JSON kar sakte hain)
+**Ab chal raha hai: Phase 1 / Step 2 — `config/env.js`**
+- `.env` (PORT, NODE_ENV) aur `.env.example` (values ke bina, ye commit hoti hai) banana
+- `src/config/env.js`: `dotenv.config()` → required variables ki list → missing ho to
+  saaf error + `process.exit(1)` → ek config object export karo
+- `server.js` me `process.env.PORT` ki jagah config se `port` use karna
+- Test: `.env` se `PORT` hata do → server start hi na ho, `Missing env: PORT` jaisa message aaye
 
 ---
 
