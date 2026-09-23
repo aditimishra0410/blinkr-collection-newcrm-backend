@@ -185,8 +185,8 @@ Har module ke liye process:
 | Step | Kya | Status |
 |---|---|---|
 | 1 | Project setup + `app.js` + `server.js` + `/health` | ✅ Done |
-| 2 | `config/env.js` — `.env` validate karna | 🟡 chal raha hai |
-| 3 | `ApiError`, `asyncHandler`, central `errorHandler` | ⬜ |
+| 2 | `config/env.js` — `.env` validate karna | ✅ Done |
+| 3 | `ApiError` + central `errorHandler` | 🟡 chal raha hai |
 | 4 | CORS, rate limit, logger (winston) | ⬜ |
 
 ---
@@ -206,12 +206,21 @@ Repo: `git@github.com:aditimishra0410/blinkr-collection-newcrm-backend.git`
 
 **Chhoti cheezein jo pending hain:** kuch jagah `;` missing; `/` route text bhejta hai (JSON kar sakte hain)
 
-**Ab chal raha hai: Phase 1 / Step 2 — `config/env.js`**
-- `.env` (PORT, NODE_ENV) aur `.env.example` (values ke bina, ye commit hoti hai) banana
-- `src/config/env.js`: `dotenv.config()` → required variables ki list → missing ho to
-  saaf error + `process.exit(1)` → ek config object export karo
-- `server.js` me `process.env.PORT` ki jagah config se `port` use karna
-- Test: `.env` se `PORT` hata do → server start hi na ho, `Missing env: PORT` jaisa message aaye
+**Phase 1 / Step 2 — ✅ COMPLETE (commit `1b5e832`, push ho chuka)**
+- `.env` (PORT=8080, NODE_ENV=development) — commit nahi hoti; `.env.example` (values ke bina) — hoti hai
+- `src/config/env.js`: `dotenv.config()` → `required` naamon ki list → `filter` se missing nikalo →
+  missing ho to error + `process.exit(1)` (fail fast) → `{ port, nodeEnv }` object `export default`
+- `server.js` ab `import env from "./config/env.js"` karke `env.port` use karta hai
+- **Rule:** `process.env` ko poore app me sirf `config/env.js` chhuegi. Naya variable chahiye to
+  usi file me `required` list aur `env` object dono me add karo.
+
+**Ab chal raha hai: Phase 1 / Step 3 — error handling**
+- `src/utils/ApiError.js` — `Error` se banaya hua class, jisme `statusCode` bhi ho
+- `src/middlewares/errorHandler.js` — 4-parameter wala middleware `(err, req, res, next)`,
+  saare errors ka ek hi jagah se JSON response
+- `app.js` ka 404 ab `next(new ApiError(404, ...))` karega, aur error handler sabse aakhir me lagega
+- Note: **Express 5** me async controller ka error apne aap error handler tak chala jata hai,
+  isliye purane repo wala `asyncHandler` (Express 4 ke liye tha) yahan zaroori nahi
 
 ---
 
