@@ -14,8 +14,5 @@ function shutdown(signal) {
 }
 
 const testError = new ApiError(404, "test error");
-// console.log("statusCode:", testError.statusCode);
-// console.log("message:", testError.message);
-// console.log(testError)
 process.on("SIGINT", () => shutdown("SIGINT"))
 process.on("SIGTERM", () => shutdown("SIGTERM"))

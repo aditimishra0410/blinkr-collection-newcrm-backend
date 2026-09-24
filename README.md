@@ -186,8 +186,8 @@ Har module ke liye process:
 |---|---|---|
 | 1 | Project setup + `app.js` + `server.js` + `/health` | ✅ Done |
 | 2 | `config/env.js` — `.env` validate karna | ✅ Done |
-| 3 | `ApiError` + central `errorHandler` | 🟡 chal raha hai |
-| 4 | CORS, rate limit, logger (winston) | ⬜ |
+| 3 | `ApiError` + central `errorHandler` | ✅ Done |
+| 4 | CORS, rate limit, logger (winston) | 🟡 chal raha hai |
 
 ---
 
@@ -214,13 +214,23 @@ Repo: `git@github.com:aditimishra0410/blinkr-collection-newcrm-backend.git`
 - **Rule:** `process.env` ko poore app me sirf `config/env.js` chhuegi. Naya variable chahiye to
   usi file me `required` list aur `env` object dono me add karo.
 
-**Ab chal raha hai: Phase 1 / Step 3 — error handling**
-- `src/utils/ApiError.js` — `Error` se banaya hua class, jisme `statusCode` bhi ho
-- `src/middlewares/errorHandler.js` — 4-parameter wala middleware `(err, req, res, next)`,
-  saare errors ka ek hi jagah se JSON response
-- `app.js` ka 404 ab `next(new ApiError(404, ...))` karega, aur error handler sabse aakhir me lagega
+**Phase 1 / Step 3 — ✅ COMPLETE (commit `5a19ab0`, push ho chuka)**
+- `src/utils/ApiError.js` — `class ApiError extends Error`, `super(message)` + `this.statusCode`
+- `src/middlewares/errorHandler.js` — `(err, req, res, next)` (4 parameters se hi Express ise
+  error handler maanta hai), `err.statusCode || 500`, `err.message || "Internal Server Error"`,
+  `console.error(err)` sirf server logs me, client ko `{ success: false, message }`
+- `src/app.js` ka order: middlewares → routes (`/`, `/health`, `/boom`) →
+  404 (`next(new ApiError(404, ...))`) → `app.use(errorHandler)` **sabse last** → export
+- Sikha: Express upar se neeche chalta hai — 404 handler ke **baad** likha route kabhi match nahi hota
+- `next(error)` me kuch pass karte hi Express baaki middlewares chhod ke seedha error handler pe jata hai
 - Note: **Express 5** me async controller ka error apne aap error handler tak chala jata hai,
   isliye purane repo wala `asyncHandler` (Express 4 ke liye tha) yahan zaroori nahi
+- `/boom` test route abhi rakha hai (Step 4 me kaam aayega), Phase 1 ke end me delete karna hai
+
+**Ab chal raha hai: Phase 1 / Step 4 — CORS, rate limit, logging**
+- `src/middlewares/` me: CORS (allowed origins `.env` se), `/login` jaisi jagah rate limit,
+  aur winston + morgan se request logging
+- `src/server.js` me abhi ek leftover hai: `testError` wali line aur `ApiError` ka import — delete karna hai
 
 ---
 
