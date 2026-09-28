@@ -172,8 +172,8 @@ Har module ke liye process:
 | Phase | Kya | Status |
 |---|---|---|
 | 0 | Team se sawaal, repo setup | ✅ Done |
-| **1** | **Skeleton: app/server, env config, error handling, security middlewares** | 🟡 **Chal raha hai** |
-| 2 | Prisma connect: `db pull`, sirf zaroori models, ek read query | ⬜ |
+| 1 | Skeleton: app/server, env config, error handling, security middlewares | ✅ Done |
+| **2** | **Prisma connect: `db pull`, sirf zaroori models, ek read query** | 🟡 **Agla (dev DB creds chahiye)** |
 | 3 | `auth` module: login, guard middleware, profile, logout | ⬜ |
 | 4 | Pehla asli module (read-only): location / customer info | ⬜ |
 | 5 | Portfolio, dashboard, reports | ⬜ |
@@ -187,7 +187,7 @@ Har module ke liye process:
 | 1 | Project setup + `app.js` + `server.js` + `/health` | ✅ Done |
 | 2 | `config/env.js` — `.env` validate karna | ✅ Done |
 | 3 | `ApiError` + central `errorHandler` | ✅ Done |
-| 4 | CORS, rate limit, logger (winston) | 🟡 chal raha hai |
+| 4 | CORS, rate limit, logger (winston) | ✅ Done |
 
 ---
 
@@ -227,10 +227,56 @@ Repo: `git@github.com:aditimishra0410/blinkr-collection-newcrm-backend.git`
   isliye purane repo wala `asyncHandler` (Express 4 ke liye tha) yahan zaroori nahi
 - `/boom` test route abhi rakha hai (Step 4 me kaam aayega), Phase 1 ke end me delete karna hai
 
-**Ab chal raha hai: Phase 1 / Step 4 — CORS, rate limit, logging**
-- `src/middlewares/` me: CORS (allowed origins `.env` se), `/login` jaisi jagah rate limit,
-  aur winston + morgan se request logging
-- `src/server.js` me abhi ek leftover hai: `testError` wali line aur `ApiError` ka import — delete karna hai
+**Phase 1 / Step 4 — ✅ COMPLETE (commit `c6dd3a5`, push ho chuka) → PHASE 1 KHATAM 🎉**
+- **CORS** (`src/app.js`): `cors({ origin: env.allowedOrigins, credentials: true })`, helmet ke ठीक baad.
+  `ALLOWED_ORIGINS` `.env` me comma-separated string hai; `config/env.js` me `.split(",")` se array banti hai
+  (array zaroori hai — string dene par cors poori list ek header me bhej deta hai, jo browser reject karta hai).
+  `credentials: true` isliye ki login cookie cross-origin ja sake.
+- **Rate limit** (`src/middlewares/rateLimiter.js`): named exports `generalLimiter` (12 min / 100)
+  aur `loginLimiter` (12 min / 5, Phase 3 me lagega). `app.set("trust proxy", 1)` bhi lagaya hai,
+  warna proxy ke peeche har request ka IP ek jaisa dikhta hai.
+- **Logging**: `src/lib/logger.js` — winston, level production me `info` warna `debug`,
+  format `timestamp + json`, transport Console. `src/app.js` me morgan (`"tiny"`) ka output
+  `stream.write` se winston me jata hai, taaki request logs bhi usi format me rahen.
+  `server.js` aur `errorHandler.js` ab `console` ki jagah `logger` use karte hain
+  (`config/env.js` ka `console` waisa hi hai — wo logger banne se pehle chalti hai).
+
+**Phase 1 ka natija:** ek chalta hua, secure, clean skeleton — `/health`, 404, central error handling,
+CORS, rate limit aur proper logging ke saath. Ab DB aur asli modules ka kaam shuru.
+
+**Ab chal raha hai: Phase 2 — Prisma + database**
+
+**Local dev database (ho gaya ✅)**
+- Production/real DB ko local pe **kabhi** copy nahi kiya — sirf schema use kiya, data nahi.
+- Postgres: `brew install postgresql@16`. Port **5433** (5432 pe pehle se ek doosra embedded
+  Postgres chalta hai — `~/Projects/Work/Extra Folders/blinkrextra/local-db`, user `kuber`,
+  db `kubercash_crm` — usse takraav se bachne ke liye).
+  Port badla: `echo "port = 5433" >> /opt/homebrew/var/postgresql@16/postgresql.conf`
+- DB: `createdb -p 5433 collection_dev`. `psql`/`createdb` me hamesha `-p 5433` lagana.
+- `.env`: `DATABASE_URL=postgresql://aditimishra@localhost:5433/collection_dev`
+- PATH me: `/opt/homebrew/opt/postgresql@16/bin` (keg-only formula hai)
+
+**Prisma (ho gaya ✅)**
+- Version **6.8.2 pin kiya** (purane repo jaisa hi). `prisma init` ne pehle Prisma 8-rc/7 laga diya tha —
+  CLI aur client ke version mismatch ki wajah se commands fail ho rahe the. "Update available 8.0.0-rc"
+  wala message **ignore karna hai**.
+- Schema **poori copy** ki (141 models), trim nahi kiya — DB shared hai, to schema uska aaina honi chahiye.
+  Kal `db pull` se refresh karna aasaan rahega.
+- `datasource.url` ko `env("PROD_DB")` se **`env("DATABASE_URL")`** kiya — zaroori, warna galti se
+  production DB pe push ho sakta tha.
+- ⚠️ **PostGIS workaround:** 3 `Unsupported("geography")` fields (Lead, fraud_cases,
+  blacklisted_location) aur `blacklisted_location` ka `@@index([location])` **comment kiye hain**.
+  `geography` PostGIS extension se aata hai, jo local Postgres@16 me nahi hai (brew ka postgis
+  doosre Postgres version ke liye bana). Ye columns app kahin use nahi karta.
+  **Jab kabhi `prisma db pull` chalao, ye lines wapas aa jayengi — dobara comment karna padega.**
+- `npx prisma db push` → local DB me **140 tables** ban gayi + Prisma client generate ho gaya
+
+**Baaki kaam**
+- `src/lib/prisma.js` — poore app me ek hi `PrismaClient`
+- `server.js` ke `shutdown()` me `await prisma.$disconnect()` jodna
+- Ek test read query se connection verify karna
+- Testing ke liye thoda **fake** seed data (nakli naam/PAN), asli customer data kabhi nahi
+- `/boom` test route delete kar dena
 
 ---
 

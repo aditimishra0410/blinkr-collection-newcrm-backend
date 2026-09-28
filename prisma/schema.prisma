@@ -1,0 +1,2916 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Lead {
+  id                         Int                       @id @default(autoincrement())
+  lead_no                    String?
+  f_name                     String?
+  m_name                     String?
+  l_name                     String?
+  full_name                  String?
+  pan                        String?
+  gender                     Gender?
+  dob                        DateTime?
+  aadhaar                    String?
+  elegible_loan_amount       Decimal?                  @db.Decimal(10, 2)
+  loan_amount                Decimal?                  @db.Decimal(10, 2)
+  tenure                     Int?
+  dpd                        Int?
+  mobile                     String?
+  alternate_mobile           String?
+  personal_email             String?
+  office_email               String?
+  allocated_to               Int?
+  assigned_to                Int?
+  lead_stage                 String?                   @default("PENDING_LEAD")
+  remarks                    String?
+  is_lead_completed          Boolean                   @default(false)
+  is_lead_closed             Boolean                   @default(false)
+  is_lead_verify_by_otp      Boolean                   @default(false)
+  repayment_date             DateTime?
+  is_kyc_approved            Boolean                   @default(false)
+  is_kyc_reject              Boolean                   @default(false)
+  kyc_rejected_by            Int?
+  is_bre_complete            Boolean?                  @default(false)
+  is_bsa_complete            Boolean?                  @default(false)
+  is_bre_reject              Boolean?                  @default(false)
+  bre_rejected_by            Int?
+  is_personal_email_verify   Boolean?                  @default(false)
+  is_office_email_verify     Boolean?                  @default(false)
+  is_employee_type_filled    Boolean?                  @default(false)
+  is_loan_requested          Boolean?                  @default(false)
+  address                    String?
+  state                      String?
+  country                    String?
+  pincode                    String?
+  city                       String?
+  lat                        String?
+  lng                        String?
+  is_reloan_case             Boolean?                  @default(false)
+  is_sanction                Boolean                   @default(false)
+  is_disbursed               Boolean                   @default(false)
+  is_closed                  Boolean                   @default(false)
+  is_active                  Boolean                   @default(true)
+  source                     String?
+  is_hold                    Boolean?                  @default(false)
+  is_rejected                Boolean?                  @default(false)
+  rejected_by                Int?
+  approved_by                Int?
+  rejection_remarks          String?
+  credit_score               Int?
+  is_person_salaried         Boolean?                  @default(true)
+  is_disposed                Boolean?                  @default(false)
+  disposed_by                Int?
+  disposed_at                DateTime?
+  disposed_reason            String?
+  created_at                 DateTime                  @default(now())
+  updated_at                 DateTime                  @updatedAt
+  loan_no                    String?
+  customer_id                Int?
+  sanction_id                Int?
+  disbursal_id               Int?
+  collection_id              Int?
+  is_feedback_submitted      Boolean?                  @default(false)
+  is_reference_added         Boolean?                  @default(false)
+  is_alternate_mobile_verify Boolean?                  @default(false)
+  salary_date                DateTime?
+  fixed_salary_date          DateTime?
+  prev_emp_id                Int?
+  monthly_income             Decimal?                  @db.Decimal(10, 2)
+  company_name               String?
+  ip                         String?
+  is_bsa_pending             Boolean?                  @default(false)
+  kyc_approved_reason        String?
+  auto_rejection             Int?
+  // location                   Unsupported("geography")?
+  is_add_address             Boolean?                  @default(false)
+  is_kyc_audit               Boolean?                  @default(false)
+  is_next_loan_applied       Boolean?
+  severity_code              Int?
+  allocated_at               DateTime?
+  assigned_at                DateTime?
+  collection_assigned_by     Int?
+  collection_assigned_to     Int?
+  loan_count                 Int?
+  inquiery_count             Int?
+  payday_count               Int?
+  region                     String?
+  version                    Int?
+  designation                String?
+  work_location              String?
+  employment_tenure_years    Int?
+  employment_tenure_months   Int?
+  previous_salary_date       DateTime?
+  father_name                String?
+  marital_status             String?
+  religion                   String?
+  is_document_added          Boolean?
+
+  collection_assigned_at DateTime?
+  collection             Collection[]
+  disbursal              Disbursal?
+  sanction               Sanction?
+  kyc_audit              kyc_audit?
+  lead_comments          lead_comments[]
+
+  @@index([lead_no])
+  @@index([customer_id])
+  // Almost every v3 User controller does
+  // `findFirst({ where: { customer_id }, orderBy: { created_at: "desc" } })`
+  // (and the pan-keyed equivalent) to get "this customer's current lead" --
+  // a composite index lets Postgres satisfy both the filter and the sort
+  // from one index instead of filtering then sorting. See
+  // prisma/migrations/*_add_lead_latest_lookup_indexes for how to apply
+  // this without locking the table (CREATE INDEX CONCURRENTLY).
+  @@index([customer_id, created_at(sort: Desc)])
+  @@index([pan, created_at(sort: Desc)])
+  @@index([sanction_id])
+  @@index([disbursal_id])
+  @@index([pan])
+  @@index([aadhaar])
+  @@index([mobile])
+  @@index([personal_email])
+  @@index([source])
+  @@index([lead_stage])
+  @@index([created_at])
+  @@index([allocated_to])
+  @@index([assigned_to])
+  @@index([updated_at])
+  @@index([is_reloan_case])
+  @@index([personal_email], map: "idx_lead_personal_email")
+  @@index([office_email])
+  @@index([is_disposed])
+  @@index([disposed_by])
+}
+
+model Customer {
+  id                               Int       @id @default(autoincrement())
+  customer_no                      String?
+  pan                              String    @unique
+  aadhaar                          String?
+  f_name                           String?
+  m_name                           String?
+  l_name                           String?
+  full_name                        String?
+  gender                           Gender?
+  dob                              DateTime?
+  mobile                           String?
+  alternate_mobile                 String?
+  personal_email                   String?
+  office_email                     String?
+  address                          String?
+  state                            String?
+  country                          String?
+  pincode                          String?
+  city                             String?
+  employement_type                 String?
+  monthly_income                   Decimal?  @db.Decimal(10, 2)
+  loan_count                       Int       @default(0)
+  credit_score                     Int?
+  recent_credit_score_date         DateTime?
+  is_active                        Boolean   @default(true)
+  is_logged_in                     Boolean?
+  last_logged_in                   DateTime?
+  auth_token                       String?
+  uan                              String?
+  created_at                       DateTime  @default(now())
+  updated_at                       DateTime  @updatedAt
+  remarks                          String?
+  failed_email_validation_attempts Int       @default(0)
+  email_blocked_until              DateTime?
+  failed_email_check_count         Int       @default(0)
+  is_email_check_blocked           Boolean   @default(false)
+  profile_image                    String?
+  aadhaar_image                    String?
+  face_match_score                 Decimal?  @db.Decimal(5, 4)
+
+  @@index([mobile])
+  @@index([personal_email])
+  @@index([office_email])
+  @@index([state])
+  @@index([city])
+  @@index([pincode])
+  @@index([pan])
+}
+
+model Sanction {
+  id                               Int       @id @default(autoincrement())
+  pan                              String?
+  lead_id                          Int?      @unique
+  lead_no                          String?
+  loan_no                          String    @unique
+  sanction_date                    DateTime?
+  loan_amount                      Decimal?  @db.Decimal(10, 2)
+  repayment_date                   DateTime?
+  repayment_amount                 Decimal?  @db.Decimal(10, 2)
+  processing_fee                   Decimal?  @db.Decimal(10, 2)
+  roi                              Decimal?  @db.Decimal(10, 2)
+  pf_percent                       Decimal?  @db.Decimal(10, 2)
+  pf_amount                        Decimal?  @db.Decimal(10, 2)
+  insurance                        Decimal?  @db.Decimal(10, 2)
+  total_admin_fee                  Decimal?  @db.Decimal(10, 2)
+  net_admin_fee                    Decimal?  @db.Decimal(10, 2)
+  net_disbursal                    Decimal?  @db.Decimal(10, 2)
+  interest_amount                  Decimal?  @db.Decimal(10, 2)
+  gst                              Decimal?  @db.Decimal(10, 2)
+  apr                              Decimal?  @db.Decimal(10, 2)
+  tenure                           Decimal?  @db.Decimal(10, 2)
+  penalty_rate                     Decimal   @default(2.00) @db.Decimal(10, 2)
+  is_override_repayment_date       Boolean?
+  override_reason                  String?
+  repayment_status_type            Int? // 0 -> sameAsSalaryDate , 1 -> beforeSalaryDate(without override) , 2 -> beforeSalaryDate(with override), 3 -> afterSalaryDate(with override), 4 -> , 99 -> for Catch Error
+  remarks                          String?
+  is_eSign_pending                 Boolean   @default(false)
+  is_eSigned                       Boolean   @default(false)
+  is_on_hold                       Boolean   @default(false)
+  is_rejected                      Boolean   @default(false)
+  rejected_by                      Int?
+  is_disbursed                     Boolean   @default(false)
+  approved_by                      Int?
+  document_id                      String?
+  created_at                       DateTime  @default(now())
+  updated_at                       DateTime  @updatedAt
+  repayment_amount_on_receive_date Decimal?  @db.Decimal(10, 2)
+  loan_growth_percentage           Decimal?  @db.Decimal(10, 2)
+  lead                             Lead?     @relation(fields: [lead_id], references: [id])
+
+  ontime_interest         Decimal?  @default(0.00) @db.Decimal(10, 2)
+  ontime_repayment_amount Decimal?  @default(0.00) @db.Decimal(10, 2)
+  penalty_amount          Decimal?  @default(0.00) @db.Decimal(10, 2)
+  dpd                     Int?      @default(0)
+  current_dpd             Int?
+  last_calc_date          DateTime?
+
+  @@index([lead_id])
+  @@index([lead_no])
+  @@index([pan])
+  @@index([sanction_date])
+  @@index([is_disbursed])
+  @@index([last_calc_date])
+}
+
+model Disbursal {
+  id                     Int       @id @default(autoincrement())
+  lead_id                Int       @unique
+  loan_no                String?
+  pan                    String?
+  sanction_id            Int?
+  payable_account        String?
+  payment_mode           String
+  amount                 Decimal?  @db.Decimal(10, 2)
+  utr                    String?
+  transaction_history_id Int?
+  disbursal_date         DateTime?
+  is_active              Boolean   @default(true)
+  is_closed              Boolean   @default(false)
+  is_settled             Boolean   @default(false)
+  is_write_off           Boolean   @default(false)
+  is_on_hold             Boolean   @default(false)
+  is_rejected            Boolean   @default(false)
+  rejected_by            Int?
+  is_disbursed           Boolean   @default(false)
+  is_data_sent           Boolean   @default(false)
+  created_at             DateTime  @default(now())
+  updated_at             DateTime  @updatedAt
+  loan_amount            Decimal?  @db.Decimal(10, 2)
+  repayment_date         DateTime?
+  repayment_amount       Decimal?  @db.Decimal(10, 2)
+  roi                    Decimal?  @db.Decimal(10, 2)
+  tenure                 Int?
+  disbursed_by           Int?
+  channel                String?
+  remarks                String?
+  status                 String?
+  lead                   Lead      @relation(fields: [lead_id], references: [id])
+
+  @@index([lead_id])
+  @@index([loan_no])
+  @@index([pan])
+  @@index([sanction_id])
+  @@index([disbursal_date])
+}
+
+model Collection {
+  id                   Int       @id @default(autoincrement())
+  customer_id          Int?
+  lead_id              Int?
+  loan_no              String?
+  pan                  String?
+  payment_mode         String?
+  received_amount      Decimal?  @db.Decimal(10, 2)
+  repayment_type       String?
+  discount             Decimal?  @db.Decimal(10, 2)
+  refund               Decimal?  @db.Decimal(10, 2)
+  total_pg_charges     Decimal   @default(0.00) @db.Decimal(10, 2)
+  date_of_recived      DateTime?
+  payment_verification Int?
+  sattelment           Decimal?  @db.Decimal(10, 2)
+  remarks              String?
+  collection_active    Boolean?
+  repay_differ_type    Int? // 0-> not override , 1-> override(++), 2-> override(--)
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+  lead                 Lead?     @relation(fields: [lead_id], references: [id])
+
+  @@index([lead_id])
+  @@index([loan_no])
+  @@index([pan])
+  @@index([customer_id])
+}
+
+model Payment {
+  id                    Int       @id @default(autoincrement())
+  pan                   String?
+  lead_id               Int?
+  lead_no               String?
+  loan_no               String?
+  total_received_amount Decimal?  @db.Decimal(10, 2)
+  interest_discount     Decimal?  @db.Decimal(10, 2)
+  penalty_discount      Decimal?  @db.Decimal(10, 2)
+  principal_discount    Decimal?  @db.Decimal(10, 2)
+  interest_received     Decimal?  @db.Decimal(10, 2)
+  penalty_received      Decimal?  @db.Decimal(10, 2)
+  principal_received    Decimal?  @db.Decimal(10, 2)
+  excess_amount         Decimal?  @db.Decimal(10, 2)
+  pg_charges            Decimal   @default(0.00) @db.Decimal(10, 2)
+  settled_amount        Decimal?
+  writeOff_amount       Decimal?
+  outstanding_amount    Decimal?
+  received_amount       Decimal?  @db.Decimal(10, 2)
+  payment_date          DateTime?
+  payment_mode          String?
+  transaction_id        String?   @unique
+  closing_type          String?
+  discount              Decimal?  @db.Decimal(10, 2)
+  is_payment_verified   Boolean?  @default(false)
+  is_rejected           Boolean?  @default(false)
+  order_status          String?
+  order_id              String?   @unique
+  receipt_id            String?
+  payment_method        String?
+  is_partial_paid       Boolean?  @default(false)
+  created_at            DateTime? @default(now())
+  updated_at            DateTime? @updatedAt
+  remarks               String?
+
+  @@index([lead_id])
+  @@index([loan_no])
+  @@index([payment_date])
+  @@index([created_at])
+  @@index([pan])
+}
+
+model Api_Logs {
+  id           Int      @id @default(autoincrement())
+  pan          String?
+  api_type     String?
+  api_provider Int?
+  api_request  Json?
+  api_response Json?
+  api_status   Boolean?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  customer_id  Int?
+  lead_id      Int?
+  remarks      String?
+
+  @@index([pan])
+  @@index([customer_id])
+  @@index([lead_id])
+  @@index([api_type])
+  @@index([created_at])
+}
+
+model Document {
+  id                Int      @id @default(autoincrement())
+  pan               String?
+  document_type     String?
+  document_url      String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  remarks           String?
+  customer_id       Int?
+  lead_id           Int?
+  is_validated      Boolean?
+  validated_by      Int?
+  document_category String?
+  document_sub_type String?
+
+  @@index([pan])
+  @@index([customer_id])
+  @@index([lead_id])
+  @@index([document_type])
+  @@index([lead_id, id])
+  @@index([lead_id, document_category])
+}
+
+model Transaction_History {
+  id                       Int      @id @default(autoincrement())
+  pan                      String?
+  lead_id                  Int?
+  loan_no                  String?
+  utr                      String?
+  ref_no                   String?
+  disbursal_id             Int?
+  sanction_id              Int?
+  amount                   Decimal? @db.Decimal(10, 2)
+  transaction_request      Json?
+  transaction_response     Json?
+  transaction_pre_response Json?
+  created_at               DateTime @default(now())
+  updated_at               DateTime @updatedAt
+  bank_name                String?
+  ifsc                     String?
+  payable_account          String?
+  payment_mode             String?
+  remarks                  String?
+
+  @@index([loan_no])
+  @@index([utr])
+  @@index([disbursal_id])
+  @@index([sanction_id])
+  @@index([created_at])
+  @@index([lead_id])
+  @@index([ref_no])
+}
+
+model Lead_Logs {
+  id            Int      @id @default(autoincrement())
+  customer_id   Int?
+  lead_id       Int?
+  pan           String?
+  severity_code Int?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  remarks       String?
+
+  @@index([lead_id, created_at(sort: Desc)])
+  @@index([customer_id])
+  @@index([lead_id])
+  @@index([pan])
+}
+
+model Employee {
+  id                Int     @id @default(autoincrement())
+  emp_id            String  @unique
+  f_name            String?
+  l_name            String?
+  email             String  @unique
+  password          String?
+  gender            Gender
+  mobile            String?
+  profile_image_url String?
+  is_active         Boolean @default(true)
+  is_logged_in      Boolean
+  is_on_holiday     Boolean @default(false)
+  emp_sequence_id   Int     @default(0)
+
+  created_at     DateTime        @default(now())
+  last_logged_in DateTime?
+  updated_at     DateTime        @updatedAt
+  logs           Employee_Logs[]
+  roles          Employee_Role[]
+  lead_comments  lead_comments[]
+}
+
+model Role {
+  id         Int             @id @default(autoincrement())
+  role_name  String          @unique
+  created_at DateTime        @default(now())
+  updated_at DateTime        @updatedAt
+  employees  Employee_Role[]
+}
+
+model Employee_Role {
+  employee_id Int
+  role_id     Int
+  assigned_at DateTime @default(now())
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  employee    Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  role        Role     @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@id([employee_id, role_id])
+  @@index([role_id])
+}
+
+model Employee_Logs {
+  id          Int      @id @default(autoincrement())
+  employee_id Int
+  remarks     String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  employee    Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+
+  @@index([employee_id])
+}
+
+model Counter {
+  id             Int      @id @default(autoincrement())
+  sequence_name  String?  @unique
+  sequence_value Int?     @default(0)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+}
+
+model Bank_Details {
+  id               Int      @id @default(autoincrement())
+  customer_id      Int?
+  lead_id          Int?
+  pan              String?
+  bank_name        String?
+  branch_name      String?
+  bank_acc_no      String?
+  ifsc_code        String?
+  beneficiary_name String?
+  account_type     String?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  fetch_from       Int?     @default(0)
+  remarks          String?
+
+  @@index([customer_id])
+  @@index([lead_id])
+  @@index([pan])
+  @@index([bank_acc_no])
+  @@index([ifsc_code])
+}
+
+model customer_address {
+  id             Int      @id @default(autoincrement())
+  customer_id    Int?
+  lead_id        Int?
+  pan            String?
+  address_source String?
+  address        String?
+  state          String?
+  country        String?
+  pincode        String?
+  city           String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  remarks        String?
+  landmark       String?
+  address_type   String?
+
+  @@index([pan])
+  @@index([customer_id])
+  @@index([lead_id])
+  @@index([pincode])
+}
+
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model Bank_Statement_Report {
+  id           Int      @id @default(autoincrement())
+  pan          String
+  api_provider Int?
+  api_request  Json?
+  api_response Json?
+  api_status   Boolean?
+  customer_id  Int?
+  lead_id      Int?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  remarks      String?
+
+  @@index([pan])
+  @@index([customer_id])
+  @@index([lead_id])
+}
+
+model blacklisted_pan {
+  id            Int      @id @default(autoincrement())
+  pan           String   @unique
+  customer_name String?
+  reason        String?
+  dpd           String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@index([pan])
+}
+
+model serviceable_pin_code {
+  id         Int      @id @default(autoincrement())
+  pincode    String?
+  district   String?
+  state      String?
+  firstTwo   Int?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([pincode])
+}
+
+model feedback_form {
+  id                        Int      @id @default(autoincrement())
+  over_all_interface        Int?
+  navigate                  Int?
+  easy_to_apply             Int?
+  customer_centric_approach Int?
+  recommend_to              Int?
+  category                  String?
+  feedback_text             String?
+  lead_id                   Int?
+  customer_id               Int?
+  pan                       String?
+  created_at                DateTime @default(now())
+  updated_at                DateTime @updatedAt
+  remarks                   String?
+
+  @@index([lead_id])
+  @@index([pan])
+  @@index([customer_id])
+}
+
+model references {
+  id             Int      @id @default(autoincrement())
+  lead_id        Int?
+  customer_id    Int?
+  pan            String?
+  ref_no_1       String?
+  ref_name_1     String?
+  ref_no_2       String?
+  ref_name_2     String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  remarks        String?
+  ref_add_1      String?
+  ref_add_2      String?
+  ref_relation_1 String?
+  ref_relation_2 String?
+
+  @@index([lead_id])
+  @@index([customer_id])
+  @@index([pan])
+  @@index([ref_no_1])
+  @@index([ref_no_2])
+}
+
+model IFSC_code {
+  id         Int      @id @default(autoincrement())
+  ifsc_code  String   @unique
+  branch     String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([ifsc_code])
+  @@index([branch])
+}
+
+model loyalty_points {
+  id                Int       @id @default(autoincrement())
+  customer_id       Int?
+  lead_id           Int?
+  pan               String?
+  points_balance    Decimal?  @db.Decimal(10, 2)
+  last_updated      DateTime  @updatedAt
+  created_at        DateTime  @default(now())
+  is_distributed    Boolean   @default(false)
+  distribution_date DateTime?
+  remarks           String?
+
+  @@index([customer_id])
+  @@index([lead_id])
+}
+
+model email_OTP {
+  id           Int       @id @default(autoincrement())
+  customer_id  Int?
+  otp          String?
+  expiry       DateTime?
+  max_attempts Int?      @default(3)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  @@index([customer_id])
+}
+
+model mobile_otp {
+  id           Int       @id @default(autoincrement())
+  otp          String?
+  expiry       DateTime?
+  max_attempts Int?      @default(3)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  mobile       String?
+
+  @@index([mobile])
+}
+
+model blacklisted_domain {
+  id          Int     @id @default(autoincrement())
+  domain_name String? @unique
+
+  @@index([domain_name])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
+
+model blacklisted_pincode {
+  id         Int      @id @default(autoincrement())
+  pincode    String   @unique
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([pincode])
+}
+
+model kyc_audit {
+  id                 Int      @id @default(autoincrement())
+  lead_id            Int      @unique
+  customer_id        Int?
+  pan                String?
+  status             Int?     @default(0)
+  remarks            String?
+  linkedin_url       String?
+  website_url        String?
+  gst_no             String?
+  company_name       String?
+  is_linkedin_verify Boolean  @default(false)
+  is_website_verify  Boolean  @default(false)
+  is_bsa_run         Boolean  @default(false)
+  is_company_verify  Boolean  @default(false)
+  assigned_to        Int?     @default(0)
+  assigned_by        Int?     @default(0)
+  approved_by        Int?     @default(0)
+  rejected_by        Int?     @default(0)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+  lead               Lead     @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+
+  @@index([lead_id])
+  @@index([customer_id])
+  @@index([pan])
+  @@index([status])
+  @@index([assigned_to])
+  @@index([approved_by])
+  @@index([rejected_by])
+}
+
+model fraud_cases {
+  id                         Int                       @id @default(autoincrement())
+  product_type               String?
+  loan_id                    String?
+  client_customer_id         String?
+  credit_account_holder_name String?
+  credit_account_holder_type String?
+  credit_account_number      String?
+  credit_bank_ifsc_code      String?
+  credit_bank_name           String?
+  applicant_contact_number_1 String?
+  applicant_aadhar_number    String?
+  applicant_pan_number       String?
+  applicant_dob              DateTime?
+  client_loan_disbursal_date DateTime?
+  net_disbursal              Int?
+  date_of_default            DateTime?
+  applicant_email_Official   String?
+  applicant_email_Personal   String?
+  applicant_address_type_1   String?
+  applicant_address_text_1   String?
+  applicant_city_1           String?
+  applicant_state_1          String?
+  applicant_pincode_1        String?
+  loan_nbfc_name             String?
+  applicant_address_type_2   String?
+  applicant_pincode_2        String?
+  applicant_address_type_3   String?
+  applicant_address_text_3   String?
+  applicant_city_3           String?
+  applicant_state_3          String?
+  applicant_pincode_3        String?
+  credit_branch_name         String?
+  applicant_gender           String?
+  lat                        String?
+  lng                        String?
+  // location                   Unsupported("geography")?
+
+  @@index([loan_id])
+  @@index([applicant_pan_number])
+}
+
+model blacklisted_location {
+  id         Int                       @id @default(autoincrement())
+  pan        String                    @unique
+  lat        String?
+  lng        String?
+  // location   Unsupported("geography")?
+  created_at DateTime                  @default(now())
+  updated_at DateTime                  @updatedAt
+
+  @@index([pan])
+  // @@index([location])
+}
+
+model api_configuration {
+  id Int @id @default(autoincrement())
+
+  api_type      String?
+  provider_name String?
+  active_status Boolean? @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model master_live_cards {
+  id         Int      @id @default(autoincrement())
+  title      String?
+  link       String?
+  is_active  Boolean? @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model master_loan_details {
+  id Int @id @default(autoincrement())
+
+  min_loan_amount Decimal? @db.Decimal(10, 2)
+  max_loan_amount Decimal? @db.Decimal(10, 2)
+  min_tenure      Decimal? @db.Decimal(10, 2)
+  max_tenure      Decimal? @db.Decimal(10, 2)
+  roi             Decimal? @db.Decimal(10, 2)
+  processing_fee  Decimal? @db.Decimal(10, 2)
+  remarks         String?
+  is_active       Boolean? @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+}
+
+model master_dummy_loan_details {
+  id Int @id @default(autoincrement())
+
+  min_loan_amount Decimal? @db.Decimal(10, 2)
+  max_loan_amount Decimal? @db.Decimal(10, 2)
+  min_tenure      Decimal? @db.Decimal(10, 2)
+  max_tenure      Decimal? @db.Decimal(10, 2)
+  roi             Decimal? @db.Decimal(10, 2)
+  processing_fee  Decimal? @db.Decimal(10, 2)
+  remarks         String?
+  is_active       Boolean? @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+}
+
+model master_support_data {
+  id        Int     @id @default(autoincrement())
+  email     String?
+  mobile_no String?
+  phone_no  String?
+  address   String?
+  linkedin  String?
+  instagram String?
+  twitter   String?
+  youtube   String?
+  facebook  String?
+
+  remarks    String?
+  is_active  Boolean? @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model master_holidays {
+  id           Int       @id @default(autoincrement())
+  title        String?
+  holiday_date DateTime?
+  is_active    Boolean?  @default(true)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+}
+
+model master_privacy_policy_data {
+  id         Int      @id @default(autoincrement())
+  content    String?
+  is_active  Boolean? @default(true)
+  remarks    String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model master_about_us_data {
+  id         Int      @id @default(autoincrement())
+  content    String?
+  is_active  Boolean? @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model master_faq_data {
+  id         Int      @id @default(autoincrement())
+  question   String?
+  answer     String?
+  is_active  Boolean? @default(true)
+  remarks    String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model master_reference_data {
+  id            Int      @id @default(autoincrement())
+  relation_type String?
+  is_active     Boolean? @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+}
+
+model master_address_data {
+  id           Int      @id @default(autoincrement())
+  address_type String?
+  is_active    Boolean? @default(true)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+}
+
+model Portfolio {
+  id                 Int       @id @default(autoincrement())
+  lead_no            String?
+  loan_no            String?
+  pan                String?
+  sanction_date      DateTime?
+  disbursal_date     DateTime?
+  loan_amount        Decimal?
+  tenure             Decimal?
+  repayment_date     DateTime?
+  repayment_amount   Decimal?
+  processing_fee     Decimal?
+  net_disbursal      Decimal?
+  interest_amount    Decimal?
+  collection_active  Boolean?
+  fraud_status       String?
+  reloan_status      String?
+  total_received     Decimal?  @db.Decimal(10, 2)
+  last_received_date DateTime?
+  outstanding        Decimal?  @db.Decimal(10, 2)
+  overdue_days       Int?
+  overdue_amount     Decimal?  @db.Decimal(10, 2)
+  dpd_bucket         String?
+  closed_status      String?
+}
+
+model collection_logs {
+  id         Int      @id @default(autoincrement())
+  lead_id    Int?
+  cust_id    Int?
+  emp_id     Int?
+  remarks    String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([cust_id])
+  @@index([emp_id])
+  @@index([lead_id])
+}
+
+model collection_ptp {
+  id              Int       @id @default(autoincrement())
+  lead_id         Int?
+  emp_id          Int?
+  ptp_amount      Decimal?  @db.Decimal(10, 2)
+  ptp_date        DateTime?
+  action_taken    String?
+  ptp_type        String?
+  action_required String?
+  remarks         String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  @@index([emp_id])
+  @@index([lead_id])
+}
+
+model journey_tracking {
+  id            Int      @id @default(autoincrement())
+  click_id      String?
+  source        String?
+  medium        String?
+  campaign_id   String?
+  campaign_name String?
+  account_id    String?
+  keyword       String?
+  device        String?
+  location      String?
+  url           String?
+  ad            String?
+  adset         String?
+  lead_id       Int?
+  cust_id       Int?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@index([campaign_id])
+  @@index([click_id])
+  @@index([cust_id])
+  @@index([lead_id])
+  @@index([medium])
+  @@index([source])
+}
+
+model master_tracking_data {
+  id          Int      @id @default(autoincrement())
+  account_id  String?
+  campaign_id String?
+  source_type String?
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([account_id])
+  @@index([campaign_id])
+  @@index([source_type])
+}
+
+model master_emp_email_config {
+  id     Int  @id @default(autoincrement())
+  emp_id Int?
+
+  host     String?
+  port     Int?
+  secure   Boolean? @default(true)
+  email_id String?
+  password String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model lead_comments {
+  id             Int       @id @default(autoincrement())
+  lead_id        Int?
+  comment        String?
+  emp_id         Int?
+  emp            Employee? @relation(fields: [emp_id], references: [id], onDelete: Cascade)
+  comment_date   DateTime?
+  scheduled_date DateTime?
+  lead           Lead?     @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  @@index([lead_id])
+  @@index([emp_id])
+  @@index([comment_date])
+  @@index([scheduled_date])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+model master_contact_us_subject {
+  id           Int      @id @default(autoincrement())
+  subject_type String?
+  is_active    Boolean? @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model master_app_version {
+  id               Int      @id @default(autoincrement())
+  platform         String?
+  min_version      String?
+  latest_version   String?
+  force_message    String?
+  optional_message String?
+  store_url        String?
+  is_active        Boolean?
+  referral_url     String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model master_insurence_slab {
+  id        Int      @id @default(autoincrement())
+  label     String?
+  premium   String?
+  is_active Boolean? @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model contact_us {
+  id Int @id @default(autoincrement())
+
+  full_name      String?
+  email_address  String?
+  mobile         String?
+  subject        String?
+  body           String?
+  is_email_sent  Boolean? @default(false)
+  is_case_closed Boolean? @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([mobile])
+  @@index([email_address])
+}
+
+model client_messages {
+  id Int @id @default(autoincrement())
+
+  screen_name String?
+  event_name  String?
+  message     String?
+  is_active   Boolean? @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model components {
+  id Int @id @default(autoincrement())
+
+  service_type  String?
+  service_code  String?
+  active_status Boolean? @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model master_counter {
+  id         Int     @id @default(autoincrement())
+  event_name String?
+  max_count  Int?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model event_counter {
+  id         Int      @id @default(autoincrement())
+  lead_id    Int?
+  event_name String?
+  count      Int?     @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([lead_id])
+  @@index([event_name])
+}
+
+model processed_events {
+  id       Int     @id @default(autoincrement())
+  event_id String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([event_id])
+}
+
+model master_feature_flags {
+  id         Int      @id @default(autoincrement())
+  event_type String?
+  is_active  Boolean? @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model unserviceable_pin_code_leads {
+  id             Int      @id @default(autoincrement())
+  pincode        String?
+  full_name      String?
+  official_email String?
+  mobile         String?
+  pan            String?
+  salary         Decimal? @db.Decimal(10, 2)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  @@index([pincode])
+  @@index([pan])
+}
+
+model collection_monitoring {
+  id          Int     @id @default(autoincrement())
+  lead_id     Int?
+  customer_id Int?
+  loan_no     String?
+  pan         String?
+
+  interest_received  Decimal @default(0.00) @db.Decimal(10, 2)
+  penalty_received   Decimal @default(0.00) @db.Decimal(10, 2)
+  principal_received Decimal @default(0.00) @db.Decimal(10, 2)
+  received_amount    Decimal @default(0.00) @db.Decimal(10, 2)
+
+  interest_discount  Decimal @default(0.00) @db.Decimal(10, 2)
+  penalty_discount   Decimal @default(0.00) @db.Decimal(10, 2)
+  principal_discount Decimal @default(0.00) @db.Decimal(10, 2)
+  total_discount     Decimal @default(0.00) @db.Decimal(10, 2)
+
+  interest_outstanding  Decimal @default(0.00) @db.Decimal(10, 2)
+  penalty_outstanding   Decimal @default(0.00) @db.Decimal(10, 2)
+  principal_outstanding Decimal @default(0.00) @db.Decimal(10, 2)
+  total_outstanding     Decimal @default(0.00) @db.Decimal(10, 2)
+
+  dpd        Int     @default(0)
+  dpd_bucket String?
+
+  is_closed  Boolean @default(false)
+  is_settled Boolean @default(false)
+
+  payment_date     DateTime?
+  allocation_month DateTime  @db.Date // YYYY-MM-01 (UTC)
+
+  excess_amount Decimal @default(0.00) @db.Decimal(10, 2)
+
+  remarks String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([lead_id])
+  @@index([customer_id])
+  @@index([loan_no])
+  @@index([pan])
+  @@index([allocation_month])
+}
+
+model month_wise_collection_data {
+  id          Int     @id @default(autoincrement())
+  lead_id     Int?
+  customer_id Int?
+  loan_no     String?
+  pan         String?
+
+  interest_received  Decimal @default(0.00) @db.Decimal(10, 2)
+  penalty_received   Decimal @default(0.00) @db.Decimal(10, 2)
+  principal_received Decimal @default(0.00) @db.Decimal(10, 2)
+  received_amount    Decimal @default(0.00) @db.Decimal(10, 2)
+
+  interest_discount  Decimal @default(0.00) @db.Decimal(10, 2)
+  penalty_discount   Decimal @default(0.00) @db.Decimal(10, 2)
+  principal_discount Decimal @default(0.00) @db.Decimal(10, 2)
+  total_discount     Decimal @default(0.00) @db.Decimal(10, 2)
+
+  interest_outstanding  Decimal @default(0.00) @db.Decimal(10, 2)
+  penalty_outstanding   Decimal @default(0.00) @db.Decimal(10, 2)
+  principal_outstanding Decimal @default(0.00) @db.Decimal(10, 2)
+  total_outstanding     Decimal @default(0.00) @db.Decimal(10, 2)
+
+  dpd        Int     @default(0)
+  dpd_bucket String?
+
+  is_closed  Boolean @default(false)
+  is_settled Boolean @default(false)
+
+  payment_date     DateTime?
+  allocation_month DateTime? @db.Date // YYYY-MM-01 (UTC)
+
+  excess_amount Decimal @default(0.00) @db.Decimal(10, 2)
+
+  remarks String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([lead_id])
+  @@index([customer_id])
+  @@index([loan_no])
+  @@index([pan])
+  @@index([allocation_month])
+}
+
+model aum_book {
+  id Int @id @default(autoincrement())
+
+  aum_month DateTime? @db.Date
+
+  new_disbursed_units  Int     @default(0)
+  new_disbursed_amount Decimal @default(0.00) @db.Decimal(14, 2)
+
+  repeat_disbursed_units  Int     @default(0)
+  repeat_disbursed_amount Decimal @default(0.00) @db.Decimal(14, 2)
+
+  total_disbursed_units  Int     @default(0)
+  total_disbursed_amount Decimal @default(0.00) @db.Decimal(14, 2)
+
+  ats Decimal @default(0.00) @db.Decimal(14, 2)
+
+  running_cases_units  Int     @default(0)
+  running_cases_amount Decimal @default(0.00) @db.Decimal(14, 2)
+
+  overdue_1_30_units  Int     @default(0)
+  overdue_1_30_amount Decimal @default(0.00) @db.Decimal(14, 2)
+
+  overdue_31_90_units  Int     @default(0)
+  overdue_31_90_amount Decimal @default(0.00) @db.Decimal(14, 2)
+
+  overdue_90_plus_units  Int     @default(0)
+  overdue_90_plus_amount Decimal @default(0.00) @db.Decimal(14, 2)
+
+  dpd_1_plus_percent  Decimal @default(0.00) @db.Decimal(5, 2)
+  dpd_30_plus_percent Decimal @default(0.00) @db.Decimal(5, 2)
+  dpd_90_plus_percent Decimal @default(0.00) @db.Decimal(5, 2)
+
+  pf_income       Decimal @default(0.00) @db.Decimal(14, 2)
+  interest_income Decimal @default(0.00) @db.Decimal(14, 2)
+
+  avg_pf  Decimal @default(0.00) @db.Decimal(10, 2)
+  avg_roi Decimal @default(0.00) @db.Decimal(5, 2)
+
+  avg_tenure_days Decimal @default(0.00) @db.Decimal(6, 2)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([aum_month])
+}
+
+model treasury_summary {
+  id Int @id @default(autoincrement())
+
+  billing_month DateTime? @db.Date
+
+  opening_balance Decimal @default(0.00) @db.Decimal(16, 2)
+
+  capital_infused Decimal @default(0.00) @db.Decimal(16, 2)
+  disbursements   Decimal @default(0.00) @db.Decimal(16, 2)
+
+  principal_outstanding_aum Decimal @default(0.00) @db.Decimal(16, 2)
+  npa_amount                Decimal @default(0.00) @db.Decimal(16, 2)
+
+  bank_balance Decimal @default(0.00) @db.Decimal(16, 2)
+
+  remarks String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([billing_month])
+}
+
+model cibil_report_month_wise {
+  id Int @id @default(autoincrement())
+
+  allocation_date DateTime? @db.Date
+
+  customer_name    String?
+  dob              String?
+  gender           String?
+  pan              String?
+  mobile           String?
+  personal_email   String?
+  office_email     String?
+  address          String?
+  state_code       String?
+  pincode          String?
+  address_category String?
+  residence_code   String?
+  account_no       String?
+  disbursal_date   String?
+  last_payment     String?
+  date_of_closed   String?
+  sanction_amount  Int?
+  current_balance  Int?
+  overdue_balance  Int?
+  dpd              Int?
+  status           String?
+  repayment_date   DateTime?
+
+  @@index([allocation_date])
+  @@index([account_no])
+}
+
+model aum_book_monthly_report_static {
+  id Int @id @default(autoincrement())
+
+  month     DateTime? @db.Date
+  row_label String?
+
+  units  Int?
+  amount Decimal? @db.Decimal(18, 2)
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  @@index([month])
+  @@index([row_label])
+}
+
+model aum_book_loan_wise_static {
+  id Int @id @default(autoincrement())
+
+  month   DateTime? @db.Date
+  lead_id Int?
+
+  bucket_label String?
+
+  loan_book_aum Decimal? @db.Decimal(18, 2)
+  loan_amount   Decimal? @db.Decimal(18, 2)
+
+  is_reloan_case Boolean?
+  dpd            Int?
+
+  tenure Int?
+  roi    Decimal? @db.Decimal(6, 2)
+
+  pf_income       Decimal? @db.Decimal(18, 2)
+  interest_amount Decimal? @db.Decimal(18, 2)
+
+  collection_active Boolean?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  @@index([month])
+  @@index([lead_id])
+  @@index([bucket_label])
+}
+
+model aum_book_dpd_wise_static {
+  id Int @id @default(autoincrement())
+
+  snapshot_date DateTime? @db.Date
+  dpd_bucket    String?
+
+  cases_count            Int?
+  total_loan_amount      Decimal? @db.Decimal(18, 2)
+  total_repayment_amount Decimal? @db.Decimal(18, 2)
+
+  percentage_of_total String?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  @@index([snapshot_date])
+  @@index([dpd_bucket])
+}
+
+model master_events {
+  id Int @id @default(autoincrement())
+
+  event_name  String?
+  media_url   String?
+  media_type  String?
+  is_active   Boolean?  @default(false)
+  expiry_date DateTime?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+}
+
+model master_payments_gateways {
+  id Int @id @default(autoincrement())
+
+  payment_gateway String?
+  is_active       Boolean? @default(false)
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+}
+
+model emp_team {
+  id Int @id @default(autoincrement())
+
+  emp_id    Int?
+  team_id   Int?
+  is_active Boolean?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+}
+
+model team {
+  id Int @id @default(autoincrement())
+
+  team_name        String?
+  department       String?
+  is_active        Boolean?
+  tema_lead_emp_id Int?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+}
+
+model aa_skip_emp {
+  id Int @id @default(autoincrement())
+
+  emp_id    Int?
+  is_active String?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+}
+
+model holiday_logs {
+  id Int @id @default(autoincrement())
+
+  emp_id     Int?
+  team_id    Int?
+  from       DateTime?
+  to         DateTime?
+  days_count Int?
+
+  leave_type String? // casual leave , sick leave 
+  leave_mode String? // first-half , second-half and full-day
+  reason     String?
+
+  is_on_holiday Boolean @default(false)
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+}
+
+model sunday_working_days_logs {
+  id Int @id @default(autoincrement())
+
+  emp_id  Int?
+  team_id Int?
+
+  is_working      Boolean   @default(false)
+  date_of_working DateTime?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+}
+
+model aa_trigger {
+  id Int @id @default(autoincrement())
+
+  pre_emp_sequence_id Int?
+  default_bucket_size Int?
+  max_emp_count       Int?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+}
+
+model master_pf_discout_table {
+  id Int @id @default(autoincrement())
+
+  pf_percent                    Decimal? @db.Decimal(10, 2)
+  loan_amount_increment_percent Decimal? @db.Decimal(10, 2)
+  pf_discount_percent           String?
+  offer_type                    String?
+  is_active                     Boolean?
+  campaign_pf_offer_id          Int?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+}
+
+model master_campaign_pf_offer {
+  id Int @id @default(autoincrement())
+
+  campaign_name          String?
+  from                   DateTime?
+  to                     DateTime?
+  repayment_date_capping DateTime?
+  is_active              Boolean?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+}
+
+model campaig_customer_data {
+  id Int @id @default(autoincrement())
+
+  offer_valid_till DateTime?
+  pan              String?
+  pf               Decimal   @db.Decimal(10, 2)
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  @@index([pan])
+}
+
+model leads_marketing_spend {
+  id Int @id @default(autoincrement())
+
+  spend_date DateTime? @map("spend_date")
+  source     String?
+  product    String?   @default("Blinkr Loan")
+
+  no_of_applications    Int @default(0) @map("no_of_applications")
+  application_disbursed Int @default(0) @map("application_disbursed")
+
+  total_amount_sanctioned Decimal @default(0) @map("total_amount_sanctioned")
+  total_amount_disbursed  Decimal @default(0) @map("total_amount_disbursed")
+  total_amount_spend      Decimal @default(0) @map("total_amount_spend")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([spend_date], map: "idx_lms_date")
+  @@index([source, spend_date], map: "idx_lms_source_date")
+  @@map("leads_marketing_spend")
+}
+
+model lead_reallocation_history {
+  id Int @id @default(autoincrement())
+
+  lead_id           Int?
+  emp_id            Int?
+  reallocation_type Int? // 0 -> by reallocation lambda function , 1 -> manually shuffling lead , 2 -> 
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([lead_id])
+  @@index([emp_id])
+}
+
+model seed_cust_data {
+  id        Int     @id @default(autoincrement())
+  pan       String?
+  repay_day Int?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([pan])
+}
+
+model pre_approved_sanction_details {
+  id      Int  @id @default(autoincrement())
+  lead_id Int?
+  cust_id Int?
+
+  prev_roi    Decimal? @db.Decimal(10, 2)
+  updated_roi Decimal? @db.Decimal(10, 2)
+
+  prev_pf_percent    Decimal? @db.Decimal(10, 2)
+  updated_pf_percent Decimal? @db.Decimal(10, 2)
+
+  pre_tenure     Int?
+  updated_tenure Int?
+
+  pre_repayment_date     DateTime?
+  updated_repayment_date DateTime?
+
+  emp_id Int?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  @@index([lead_id])
+  @@index([cust_id])
+  @@index([emp_id])
+}
+
+model master_banking_bypass_count {
+  id              Int       @id @default(autoincrement())
+  is_active       Boolean?
+  max_retry_count Int?
+  max_dpd         Int?
+  created_at      DateTime? @default(now())
+  updated_at      DateTime? @updatedAt
+}
+
+model banking_bypass_count {
+  id          Int       @id @default(autoincrement())
+  lead_id     Int?
+  count       Int?
+  dpd         Int?
+  is_bypassed Boolean?
+  created_at  DateTime? @default(now())
+  updated_at  DateTime? @updatedAt
+
+  @@index([lead_id])
+}
+
+model salary_override {
+  id               Int       @id @default(autoincrement())
+  lead_id          Int
+  cust_id          Int?
+  initial_sal_date DateTime?
+  updated_sal_date DateTime?
+  stage            Int // 1-> LOAN_AMOUNT_STAGE , 2-> AUDIT_APPROVED , 99-> MANUALLY.
+  emp_id           Int?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  @@unique([lead_id, stage])
+  @@index([lead_id])
+}
+
+model master_downtime {
+  id Int @id @default(autoincrement())
+
+  message                String?
+  downtime_starting_date DateTime?
+  downtime_end_date      DateTime?
+  is_active              Boolean?  @default(false)
+  is_journey_stop        Boolean?  @default(false)
+  downtime_type          String?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+}
+
+model complete_external_data {
+  id Int @id @default(autoincrement())
+
+  loan_number              String?
+  cust_type                String?
+  source                   String?
+  lead_stage               String?
+  full_name                String?
+  address                  String?
+  city                     String?
+  state                    String?
+  pan                      String?
+  mobile                   String?
+  personal_email           String?
+  official_email           String?
+  credit_assign_emp_name   String?
+  sales_assign_emp_name    String?
+  credit_score             Int?
+  disbursal_date           DateTime?
+  loan_amount              Decimal?  @db.Decimal(10, 2)
+  roi                      Decimal?  @db.Decimal(10, 2)
+  total_admin_fee          Decimal?  @db.Decimal(10, 2)
+  pf                       Decimal?  @db.Decimal(10, 2)
+  gst                      Decimal?  @db.Decimal(10, 2)
+  net_disbursal            Decimal?  @db.Decimal(10, 2)
+  repayment_amount         Decimal?  @db.Decimal(10, 2)
+  repayment_date           DateTime?
+  utr                      String?
+  close_date               DateTime?
+  received_amount          Decimal?  @db.Decimal(10, 2)
+  tenure                   Int?
+  ifsc_code                String?
+  bank_acc_no              String?
+  bank_name                String?
+  present_in_blinkrloan_db String?
+  customer_references      String?
+  employer_name            String?
+  employer_address         String?
+  data_version             Int?
+  created_at               DateTime? @default(now())
+  updated_at               DateTime? @updatedAt
+
+  @@index([pan])
+}
+
+model reloan_aa_trigger {
+  id              Int  @id @default(autoincrement())
+  prev_emp_seq_id Int?
+  max_emp_count   Int?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+}
+
+model reloan_aa_emp {
+  id                  Int      @id @default(autoincrement())
+  max_busket_size     Int?
+  current_bucket_size Int?
+  emp_seq_id          Int?
+  emp_id              Int?
+  is_active           Boolean?
+  team_id             Int?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+}
+
+model master_aa_config {
+  id         Int      @id @default(autoincrement())
+  start_day  Int?
+  end_day    Int?
+  start_time String?
+  end_time   String?
+  is_active  Boolean?
+  policy_id  Int?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+}
+
+model master_aa_policy {
+  id                 Int      @id @default(autoincrement())
+  policy_discription String?
+  case_type          Int? // 1 for -> FRESH , 2 for -> RELOAN , 3 -> FOR ALL
+  is_active          Boolean?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+}
+
+model master_total_spend {
+  id          Int      @id @default(autoincrement())
+  month       String?
+  total_spend Decimal? @db.Decimal(10, 2)
+
+  is_active  Boolean?
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+}
+
+model analytics_parameter_registry {
+  parameter_key  String  @id @db.VarChar(100)
+  display_name   String  @db.VarChar(150)
+  source_column  String  @db.Text
+  parameter_type String  @db.VarChar(50)
+  bucket_type    String  @db.VarChar(50)
+  is_active      Boolean @default(true)
+
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamp(6)
+
+  bucket_configs analytics_bucket_config[]
+
+  @@map("analytics_parameter_registry")
+}
+
+model analytics_bucket_config {
+  id Int @id @default(autoincrement())
+
+  parameter_key String @db.VarChar(100)
+  bucket_label  String @db.VarChar(100)
+
+  min_value Decimal? @db.Decimal(20, 4)
+  max_value Decimal? @db.Decimal(20, 4)
+
+  sort_order Int
+
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  parameter analytics_parameter_registry @relation(fields: [parameter_key], references: [parameter_key], onDelete: Cascade)
+
+  @@index([parameter_key], map: "idx_analytics_bucket_config_key")
+  @@map("analytics_bucket_config")
+}
+
+model location {
+  id      Int     @id @default(autoincrement())
+  region  String?
+  state   String?
+  city    String?
+  pincode String?
+  status  Boolean @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model customer_remarks {
+  id          Int      @id @default(autoincrement())
+  lead_id     Int?
+  cust_id     Int?
+  emp_id      Int?
+  loan_no     String?
+  pan         String?
+  remarks     String?
+  remark_type String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([lead_id])
+  @@index([cust_id])
+  @@index([emp_id])
+  @@index([pan])
+  @@index([loan_no])
+}
+
+model not_taken_reloan_leads {
+  id               Int       @id @default(autoincrement())
+  lead_id          Int?
+  pan              String?
+  mobile           String?
+  alternate_mobile String?
+  disbursal_date   DateTime?
+  repayment_date   DateTime?
+  received_date    DateTime?
+  full_name        String?
+  is_reloan_case   Boolean?
+  current_assignee Int?
+  prev_assignee    Int?
+
+  team_id         Int?
+  status          String? // Recovered , or not , 
+  is_loan_applied Boolean? @default(false)
+  is_pan_blocked  Boolean  @default(false)
+  creation_source Int? // 1.Bilzy , 2.PayU , 3.RazorPay , 4.Paytm , 5.ManuallyUpdate
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([lead_id])
+  @@index([pan])
+  @@index([mobile])
+  @@index([alternate_mobile])
+  @@index([prev_assignee])
+  @@index([current_assignee])
+  @@index([repayment_date])
+  @@index([received_date])
+}
+
+model monthly_income {
+  id                             Int       @id @default(autoincrement())
+  lead_id                        Int?
+  cust_id                        Int?
+  bank_statement_report_id       Int?
+  amount                         Decimal?  @db.Decimal(10, 2)
+  narration                      String?
+  transaction_date               DateTime?
+  month_year                     String?
+  income_type                    Int? // salary -> 1 , insentive -> 2 , other -> 3
+  bank_name                      String?
+  account_type                   Int? // 1-> priamry_acc_with_all_salary , 2-> primary_acc_with_less_then_3_salary , 3-> secondary_acc_with_salary , 4-> secondary_acc_without_salary
+  is_abnormal_behaviour_captured Boolean? // for example  monthly income come , 90K , 90K and third one is 70K then it is abnormal behaviour okay ,
+  is_recent_income               Boolean?
+  created_at                     DateTime  @default(now())
+  updated_at                     DateTime  @updatedAt
+}
+
+model bsa_link_generation {
+  id         Int     @id @default(autoincrement())
+  request_id String? @unique
+
+  lead_id Int?
+  cust_id Int
+
+  url String?
+
+  valid_from DateTime?
+  valid_to   DateTime?
+
+  sent_via_sms   Boolean @default(false)
+  sent_via_email Boolean @default(false)
+
+  status Int @default(1) // 1 = GENERATED  ,  2 = SENT ,  3 = OPENED , 4 = SUCCESS , 5 = EXPIRED , 6 = FAILED
+
+  lead_stage   String?
+  sent_by      Int?
+  banking_type Int?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([lead_id])
+  @@index([cust_id])
+  @@index([request_id])
+}
+
+model bre_rejection_codes {
+  id          Int     @id @default(autoincrement())
+  lead_id     Int?
+  cust_id     Int?
+  bre_id      Int?
+  reason_code Int?
+  message     String?
+  value_int   Int?
+  threshold   Int?
+  min_value   Int?
+  max_value   Int?
+
+  severity Int? // 1 -> LOW , 2 -> MEDIUM , 3 -> HIGH
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model master_bre_rejection_rules {
+  id Int @id @default(autoincrement())
+
+  bre_code        String?
+  is_active       Boolean?
+  rejection_layer Int? // 1 -> REJECT OVERALL , 2 -> APPROVE OVERALL
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model master_loan_amount_threshold {
+  id Int @id @default(autoincrement())
+
+  min_net_salary_percent Decimal  @db.Decimal(10, 2)
+  max_net_salary_percent Decimal? @db.Decimal(10, 2)
+
+  multiplier_percent Decimal @db.Decimal(10, 3)
+
+  max_eligible_amount Decimal? @db.Decimal(12, 2)
+
+  is_active Boolean @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model bre_rejection_summary {
+  id          Int     @id @default(autoincrement())
+  lead_id     Int?
+  cust_id     Int?
+  bre_id      Int?
+  reason_code Int?
+  message     String?
+  value_int   Int?
+  threshold   Int?
+  min_value   Int?
+  max_value   Int?
+
+  severity Int? // 1 -> LOW , 2 -> MEDIUM , 3 -> HIGH
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model master_audit_approval_reason {
+  id Int @id @default(autoincrement())
+
+  type      String?
+  threshold Int?
+  min_value Int?
+  max_value Int?
+  is_active Boolean?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model one_pager_base_data {
+  id      Int  @id @default(autoincrement())
+  lead_id Int  @unique
+  cust_id Int?
+
+  credit_score                       Int?
+  credit_score_collection_percentage Int?
+  credit_score_cases_count           Int?
+  credit_score_severity              Int?
+
+  pincode_value                 Int?
+  pincode_collection_percentage Int?
+  pincode_cases_count           Int?
+  pincode_severity              Int?
+
+  payday_count_number                Int?
+  payday_cases_count                 Int?
+  payday_count_collection_percentage Int?
+  payday_count_severity              Int?
+
+  company_domain_name                       String?
+  company_domain_name_collection_percentage Int?
+  company_domain_cases_count                Int?
+  company_domain_name_severity              Int?
+
+  state_name                  String?
+  state_collection_percentage Int?
+  state_cases_count           Int?
+  state_severity              Int?
+
+  city_name                  String?
+  city_collection_percentage Int?
+  city_cases_count           Int?
+  city_cases_severity        Int?
+
+  region_name                  String?
+  region_cases_count           Int?
+  region_collection_percentage Int?
+  region_severity              Int?
+
+  inquiry_count_number                Int?
+  inquiry_count_collection_percentage Int?
+  inquiry_cases_count                 Int?
+  inquiry_count_severity              Int?
+
+  max_current_dpd      Int?
+  total_overdue_amount Int?
+  net_salary           Int?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([cust_id])
+  @@index([state_name])
+  @@index([city_name])
+  @@index([region_name])
+  @@index([pincode_value])
+  @@index([company_domain_name])
+  @@index([credit_score])
+  @@index([credit_score_severity])
+  @@index([payday_count_number])
+  @@index([payday_count_severity])
+  @@index([inquiry_count_number])
+  @@index([inquiry_count_severity])
+  @@index([max_current_dpd])
+  @@index([total_overdue_amount])
+  @@index([net_salary])
+  @@index([created_at])
+  @@map("one_pager_base_data")
+}
+
+model cust_loan_history {
+  id Int @id @default(autoincrement())
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model cust_audit_trail {
+  id Int @id @default(autoincrement())
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model one_pager_snapshot {
+  id      Int  @id @default(autoincrement())
+  lead_id Int  @unique
+  cust_id Int?
+
+  data Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model bre_rejection {
+  id              Int      @id @default(autoincrement())
+  bre_code        String?
+  is_active       Boolean?
+  rejection_layer Int?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model collection_severity_config {
+  id Int @id @default(autoincrement())
+
+  min_percentage Decimal? @db.Decimal(5, 2)
+  max_percentage Decimal? @db.Decimal(5, 2)
+
+  min_inclusive Boolean @default(true)
+  max_inclusive Boolean @default(true)
+
+  severity_value Int
+}
+
+model aa_consent_tracking {
+  id Int @id @default(autoincrement())
+
+  lead_id Int?
+  cust_id Int?
+  pan     String?
+
+  client_trnxid String @unique @db.Uuid
+
+  status Int? // 1 -> , 2 -> , 3 ->
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([lead_id])
+  @@index([status])
+  @@map("aa_consent_tracking")
+}
+
+model warn_indicator {
+  id Int @id @default(autoincrement())
+
+  lead_id Int  @unique
+  cust_id Int?
+
+  emp_id Int?
+  status Int? // "PENDING" , "APROVED" , "REJECTED".
+
+  warn_type Int? // 1-> payday_discontinue , // 2-> selfie , // 3-> kyc mismatch
+  warn_snap Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model master_loan_income_ratio_config {
+  id Int @id @default(autoincrement())
+
+  max_loan_to_income_percent Decimal @db.Decimal(5, 2)
+
+  is_active Boolean @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+// Multiplier slabs applied to averageSalary when netSalary (from BRE) is negative.
+// min/max_deficit_percent express abs(netSalary) as a % of averageSalary.
+model master_negative_salary_multiplier_threshold {
+  id Int @id @default(autoincrement())
+
+  min_deficit_percent Decimal  @db.Decimal(10, 2)
+  max_deficit_percent Decimal? @db.Decimal(10, 2)
+
+  multiplier_percent Decimal @db.Decimal(10, 2)
+
+  // when true, this slab means BRE reject with eligible amount 0
+  is_reject Boolean @default(false)
+
+  is_active Boolean @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+// Toggles which getEligibleLoanAmount logic is live:
+// 1 -> averageSalary-only slabs (master_loan_amount_threshold)
+// 2 -> netSalary aware logic (master_negative_salary_multiplier_threshold + BRE eligibleLoanAmount passthrough)
+model master_loan_eligibility_feature_flag {
+  id Int @id @default(autoincrement())
+
+  active_logic Int @default(1)
+
+  is_active Boolean @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+enum Gender {
+  M
+  F
+  O
+}
+
+// ============================================================
+// YES BANK FTx integration (BeneDB + Fund Transfer + Callback)
+// Backing tables for the /api/yes-bank/* REST wrapper. Independent
+// of the Lead/Disbursal flow (lead_id below is a plain nullable
+// reference, not a formal relation) so this module can be used
+// standalone as well as from the loan disbursal flow..
+// ============================================================
+
+model YesBankBeneficiary {
+  id                Int      @id @default(autoincrement())
+  bene_code         String   @unique
+  cust_id           String
+  src_account_no    String
+  payment_type      String
+  purpose_cd        String?
+  bene_name         String
+  bene_ifsc         String
+  bene_account_no   String
+  bene_expiry_dt    String?
+  transaction_limit Decimal? @db.Decimal(18, 2)
+  currency_cd       String   @default("INR")
+  upi_handle        String?
+  mobile_no         String?
+  email_id          String?
+  address1          String?
+  address2          String?
+  status            String   @default("ACTIVE")
+  bank_ref_id       String?
+  last_action       String?
+  request           Json?
+  response          Json?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  transactions YesBankTransaction[]
+
+  @@index([cust_id])
+  @@index([status])
+}
+
+model YesBankTransaction {
+  id               Int      @id @default(autoincrement())
+  api_ref_num      String   @unique
+  cust_ref_num     String?
+  bank_ref_id      String?
+  lead_id          Int?
+  beneficiary_id   Int?
+  bene_code        String?
+  bene_name        String?
+  bene_ifsc        String?
+  bene_account_no  String?
+  amount           Decimal  @db.Decimal(18, 2)
+  currency_cd      String   @default("INR")
+  purpose_cd       String?
+  purpose_cd_ref   String?
+  pymt_type        String
+  exec_pymt_method String?
+  txn_status       String?
+  status           String
+  error_code       String?
+  error_sub_code   String?
+  error_message    String?
+  action_code      String?
+  retry_count      Int      @default(0)
+  request          Json?
+  response         Json?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  beneficiary YesBankBeneficiary? @relation(fields: [beneficiary_id], references: [id])
+  callbacks   YesBankCallback[]
+
+  @@index([lead_id])
+  @@index([bank_ref_id])
+  @@index([status])
+  @@index([beneficiary_id])
+}
+
+model YesBankCallback {
+  id               Int      @id @default(autoincrement())
+  transaction_id   Int?
+  api_ref_num      String?
+  bank_ref_id      String?
+  txn_status       String?
+  is_processed     Boolean  @default(false)
+  is_duplicate     Boolean  @default(false)
+  headers          Json?
+  raw_payload      Json
+  processing_error String?
+  created_at       DateTime @default(now())
+
+  transaction YesBankTransaction? @relation(fields: [transaction_id], references: [id])
+
+  @@index([api_ref_num])
+  @@index([bank_ref_id])
+  @@index([transaction_id])
+}
+
+model YesBankApiLogs {
+  id              Int      @id @default(autoincrement())
+  api_name        String
+  request_url     String?
+  request_headers Json?
+  request_body    Json?
+  response_status Int?
+  response_body   Json?
+  duration_ms     Int?
+  error_message   String?
+  created_at      DateTime @default(now())
+
+  @@index([api_name])
+  @@index([created_at])
+}
+
+// Routes features between implementations at runtime, eg SALARY_CALCULATION
+// 1 = legacy provider-report average, 2 = income engine (service/income-engine/).
+// Read through VersionConfigRepository (60s TTL cache, fails open to legacy).
+model feature_version_config {
+  id Int @id @default(autoincrement())
+
+  feature_key    String @unique // eg. SALARY_CALCULATION
+  active_version Int    @default(1)
+
+  description String?
+  updated_by  Int? // admin / crm user id who flipped the version
+
+  is_active Boolean @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+/// Settlement/OTS requests. No tenant_id (white-label, one DB per company).
+/// loan_no/lead_id/raised_by_id are soft refs to the PayTracker Lead/Employee
+/// data (lives outside this table) — names are snapshotted at write time.
+model settlement_requests {
+  id BigInt @id @default(autoincrement())
+
+  loan_no       String
+  lead_id       String?
+  borrower_name String
+  mobile        String?
+  email         String?
+  pan           String?
+
+  loan_amt    Decimal  @default(0) @db.Decimal(14, 2)
+  outstanding Decimal  @db.Decimal(14, 2)
+  settle_amt  Decimal  @db.Decimal(14, 2)
+  /// DB-generated: GREATEST(outstanding - settle_amt, 0) — never write this field
+  waiver      Decimal? @db.Decimal(14, 2)
+
+  dpd        Int     @default(0)
+  /// DB-generated from dpd (no_dpd/1_30/31_60/61_90/91_120/121_180/180_plus) — never write this field
+  dpd_bucket String?
+
+  settle_type String    @default("OTS")
+  settle_date DateTime? @db.Date
+  reason      String
+  notes       String?
+
+  raised_by    String
+  raised_by_id String?
+  raised_on    DateTime @default(now())
+
+  status        String    @default("pending")
+  admin_remarks String?
+  decided_by    String?
+  decided_by_id String?
+  decided_on    DateTime?
+
+  letter_sent    Boolean   @default(false)
+  letter_sent_on DateTime?
+  letter_sent_to String?
+
+  ndc_sent    Boolean   @default(false)
+  ndc_sent_on DateTime?
+  ndc_sent_to String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  events    settlement_events[]
+  documents settlement_documents[]
+
+  @@index([status, raised_on(sort: Desc)])
+  @@index([loan_no])
+  @@index([lead_id])
+  @@index([raised_by_id, raised_on(sort: Desc)])
+  @@index([dpd_bucket])
+}
+
+/// Append-only audit trail behind settlement_requests — never UPDATE/DELETE rows here.
+model settlement_events {
+  id            BigInt @id @default(autoincrement())
+  settlement_id BigInt
+
+  event_type  String
+  from_status String?
+  to_status   String?
+
+  actor_name    String
+  actor_user_id String?
+  /// roles held AT THE TIME of the action
+  actor_roles   String[]
+
+  remarks String?
+  meta    Json    @default("{}")
+
+  created_at DateTime @default(now())
+
+  settlement settlement_requests @relation(fields: [settlement_id], references: [id], onDelete: Cascade)
+
+  @@index([settlement_id, created_at])
+  @@index([event_type, created_at(sort: Desc)])
+}
+
+/// Every generated/dispatched settlement letter or NDC PDF.
+model settlement_documents {
+  id            BigInt @id @default(autoincrement())
+  settlement_id BigInt
+
+  doc_type String
+
+  file_name       String
+  file_url        String?
+  file_size_bytes BigInt?
+  checksum_sha256 String?
+
+  sent_to       String?
+  sent_cc       String[]
+  email_subject String?
+  sent_at       DateTime?
+  sent_by       String?
+  sent_by_id    String?
+
+  delivery_status String  @default("pending")
+  delivery_error  String?
+
+  created_at DateTime @default(now())
+
+  settlement settlement_requests @relation(fields: [settlement_id], references: [id], onDelete: Cascade)
+
+  @@index([settlement_id, doc_type, created_at(sort: Desc)])
+  @@index([created_at(sort: Desc)])
+}
+
+/// OPTIONAL — max waiver % allowed per DPD bucket. Currently lives in
+/// data/settlement_vintage_policy.json; only needed behind a load balancer.
+model settlement_vintage_policy {
+  bucket_key String   @id
+  percent    Decimal  @db.Decimal(5, 2)
+  enabled    Boolean  @default(true)
+  updated_by String?
+  updated_at DateTime @default(now())
+}
+
+model convox_call_logs {
+  id                  BigInt    @id @default(autoincrement())
+  call_reference_id   String    @db.VarChar(64)
+  mobile_no           String    @db.VarChar(20)
+  process_name        String?   @db.VarChar(100)
+  call_date           DateTime?
+  user_id             String    @db.VarChar(100)
+  disposition         String?   @db.VarChar(100)
+  disposition2        String?   @db.VarChar(100)
+  disposition3        String?   @db.VarChar(100)
+  remarks             String?
+  call_status         String?   @db.VarChar(50)
+  call_mode           String?   @db.VarChar(50)
+  call_hour           String?   @db.VarChar(5)
+  call_minute         String?   @db.VarChar(5)
+  call_duration       Int?
+  completed_by        String?   @db.VarChar(50)
+  queue_name          String?   @db.VarChar(100)
+  queue_duration      Int?
+  ring_duration       Int?
+  followup_time       String?   @db.VarChar(50)
+  station             String?   @db.VarChar(50)
+  list_id             String?   @db.VarChar(100)
+  lead_id             String    @db.VarChar(100)
+  did                 String?   @db.VarChar(50)
+  recording_file_name String?
+  /// CRM Lead.id after resolve
+  crm_lead_id         Int?
+  loan_no             String?   @db.VarChar(50)
+  lead_no             String?   @db.VarChar(50)
+  customer_id         Int?
+  customer_name       String?   @db.VarChar(200)
+  match_status        String?   @db.VarChar(40)
+  match_by            String?   @db.VarChar(30)
+  raw_payload         Json?
+  received_at         DateTime  @default(now())
+
+  @@index([lead_id])
+  @@index([call_reference_id])
+  @@index([user_id])
+  @@index([received_at])
+  @@index([crm_lead_id])
+  @@index([loan_no])
+  @@index([match_status])
+  @@map("convox_call_logs")
+}
+
+model convox_call_popup {
+  id                        BigInt    @id @default(autoincrement())
+  agent_id                  String    @db.VarChar(100)
+  call_hit_reference_number String    @db.VarChar(64)
+  process_name              String?   @db.VarChar(100)
+  mobile_number             String    @db.VarChar(20)
+  lead_id                   String    @db.VarChar(100)
+  entry_date                DateTime?
+  call_type                 String?   @db.VarChar(30)
+  station                   String?   @db.VarChar(50)
+  /// CRM Lead.id after resolve
+  crm_lead_id               Int?
+  loan_no                   String?   @db.VarChar(50)
+  lead_no                   String?   @db.VarChar(50)
+  customer_id               Int?
+  customer_name             String?   @db.VarChar(200)
+  match_status              String?   @db.VarChar(40)
+  match_by                  String?   @db.VarChar(30)
+  raw_payload               Json?
+  received_at               DateTime  @default(now())
+
+  @@index([lead_id])
+  @@index([call_hit_reference_number])
+  @@index([agent_id])
+  @@index([mobile_number])
+  @@index([received_at])
+  @@index([crm_lead_id])
+  @@index([loan_no])
+  @@index([match_status])
+  @@map("convox_call_popup")
+}
+
+model additional_document_request {
+  id                Int       @id @default(autoincrement())
+  lead_id           Int
+  customer_id       Int?
+  pan               String?
+  document_category String
+  document_sub_type String?
+  document_label    String?
+  remarks           String?
+  is_uploaded       Boolean   @default(false)
+  document_id       Int?
+  uploaded_at       DateTime?
+  uploaded_by_type  String?
+  uploaded_by       Int?
+  upload_source     String?
+  requested_by      Int
+  requested_at      DateTime  @default(now())
+  is_active         Boolean   @default(true)
+  cancelled_by      Int?
+  cancelled_at      DateTime?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@unique([lead_id, document_category], map: "additional_document_request_lead_id_document_category_key")
+  @@index([lead_id, is_uploaded])
+  @@index([customer_id])
+  @@index([document_id])
+}
+
+/// Master: third-party collection agencies
+model collection_agency {
+  id             Int      @id @default(autoincrement())
+  code           String   @unique @db.VarChar(50)
+  name           String   @db.VarChar(150)
+  contact_person String?  @db.VarChar(100)
+  mobile         String?  @db.VarChar(20)
+  email          String?  @db.VarChar(100)
+  address        String?
+  is_active      Boolean  @default(true)
+  remarks        String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  users     collection_agency_user[]
+  cases     collection_agency_case[]
+  customers collection_agency_customer[]
+
+  @@index([is_active])
+  @@map("collection_agency")
+}
+
+/// Agency portal login users
+model collection_agency_user {
+  id            Int       @id @default(autoincrement())
+  agency_id     Int
+  name          String    @db.VarChar(150)
+  mobile        String?   @db.VarChar(20)
+  email         String    @unique @db.VarChar(150)
+  designation   String    @db.VarChar(80)
+  password      String
+  is_active     Boolean   @default(true)
+  last_login_at DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  agency collection_agency @relation(fields: [agency_id], references: [id], onDelete: Cascade)
+
+  @@index([agency_id])
+  @@index([mobile])
+  @@index([designation])
+  @@index([is_active])
+  @@map("collection_agency_user")
+}
+
+/// Lightweight agency cases
+model collection_agency_case {
+  id                 Int       @id @default(autoincrement())
+  agency_id          Int
+  lead_id            Int
+  cust_id            Int?
+  loan_no            String?   @db.VarChar(50)
+  lead_no            String?   @db.VarChar(50)
+  customer_name      String?   @db.VarChar(200)
+  mobile             String?   @db.VarChar(20)
+  dpd_at_handoff     Int?
+  outstanding_amount Decimal?  @db.Decimal(12, 2)
+  handoff_at         DateTime  @default(now())
+  handoff_by         Int?
+  assigned_to        Int?
+  assigned_by        Int?
+  assigned_at        DateTime?
+  status             String    @default("OPEN") @db.VarChar(30)
+  remarks            String?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  agency collection_agency            @relation(fields: [agency_id], references: [id], onDelete: Cascade)
+  logs   collection_agency_case_log[]
+
+  @@unique([agency_id, lead_id])
+  @@index([agency_id])
+  @@index([lead_id])
+  @@index([loan_no])
+  @@index([assigned_to])
+  @@index([status])
+  @@index([handoff_at])
+  @@map("collection_agency_case")
+}
+
+/// Activity logs on agency cases
+model collection_agency_case_log {
+  id         Int      @id @default(autoincrement())
+  case_id    Int
+  agency_id  Int?
+  user_id    Int?
+  action     String?  @db.VarChar(50)
+  remarks    String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  case collection_agency_case @relation(fields: [case_id], references: [id], onDelete: Cascade)
+
+  @@index([case_id])
+  @@index([agency_id])
+  @@index([user_id])
+  @@index([created_at])
+  @@map("collection_agency_case_log")
+}
+
+/// Full CRM snapshot for DPD > 40 cases handed to agency
+model collection_agency_customer {
+  id                  Int       @id @default(autoincrement())
+  agency_id           Int
+  lead_id             Int
+  cust_id             Int?
+  pan                 String?   @db.VarChar(20)
+  full_name           String?   @db.VarChar(200)
+  loan_no             String?   @db.VarChar(50)
+  personal_email      String?   @db.VarChar(150)
+  office_email        String?   @db.VarChar(150)
+  company_name        String?   @db.VarChar(200)
+  salary_date         DateTime?
+  collection_status   String?   @db.VarChar(40)
+  repayment_date      DateTime?
+  dpd                 Int?
+  loan_amount         Decimal?  @db.Decimal(12, 2)
+  net_disbursal       Decimal?  @db.Decimal(12, 2)
+  sanction_date       DateTime?
+  repayment_amount    Decimal?  @db.Decimal(12, 2)
+  mobile              String?   @db.VarChar(20)
+  ref_no_1            String?
+  ref_no_2            String?
+  alternate_mobile    String?   @db.VarChar(20)
+  geo_state           String?   @db.VarChar(100)
+  geo_city            String?   @db.VarChar(100)
+  geo_pincode         String?   @db.VarChar(20)
+  geo_address         String?
+  aadhaar_state       String?   @db.VarChar(100)
+  aadhaar_city        String?   @db.VarChar(100)
+  aadhaar_pincode     String?   @db.VarChar(20)
+  aadhaar_address     String?
+  ongrid_addresses    String?
+  cibil_addresses     String?
+  residence_addresses String?
+  office_addresses    String?
+  received_amount     Decimal?  @db.Decimal(12, 2)
+  date_of_recived     DateTime?
+  current_outstanding Decimal?  @db.Decimal(12, 2)
+  status              String    @default("OPEN") @db.VarChar(30)
+  assigned_to         Int?
+  assigned_by         Int?
+  assigned_at         DateTime?
+  handoff_by          Int?
+  handoff_at          DateTime  @default(now())
+  remarks             String?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  agency collection_agency @relation(fields: [agency_id], references: [id], onDelete: Cascade)
+
+  @@unique([agency_id, lead_id])
+  @@index([agency_id])
+  @@index([lead_id])
+  @@index([loan_no])
+  @@index([pan])
+  @@index([dpd])
+  @@index([status])
+  @@index([assigned_to])
+  @@index([handoff_at])
+  @@map("collection_agency_customer")
+}
+
+model collection_disposition {
+  id                Int       @id @default(autoincrement())
+  lead_id           Int?
+  cust_id           Int?
+  emp_id            Int?
+  disposition_code  String
+  disposition_label String?
+  ptp_amount        Decimal?  @db.Decimal(10, 2)
+  ptp_date          DateTime?
+  ptp_type          String?
+  remarks           String?
+  ptp_id            Int?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@index([lead_id])
+  @@index([cust_id])
+  @@index([emp_id])
+  @@index([disposition_code])
+  @@index([created_at])
+}
+
+/// Tracks A → B → C collection agent assignment trail per lead
+model collection_assignment {
+  id                   Int      @id @default(autoincrement())
+  lead_id              Int?
+  cust_id              Int?
+  loan_no              String?
+  assigned_to          Int?
+  assigned_by          Int?
+  previous_assigned_to Int?
+  source               String?
+  remarks              String?
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  @@index([lead_id])
+  @@index([cust_id])
+  @@index([assigned_to])
+  @@index([assigned_by])
+  @@index([loan_no])
+  @@index([created_at])
+}
+
+model recovery_view_data {
+  loan_no String  @id
+  lead_id Int?
+  pan     String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+/// PayTracker CRM centralized activity / audit monitoring log (append-only).
+model paytracker_activity_log {
+  id BigInt @id @default(autoincrement())
+
+  activity_at DateTime @default(now())
+
+  employee_id     Int?
+  employee_emp_id String?
+  employee_name   String?
+  employee_email  String?
+
+  action  String
+  details String?
+  status  String  @default("Success")
+
+  related_to   String?
+  related_type String?
+  related_id   String?
+  loan_no      String?
+  lead_id      Int?
+  pan          String?
+
+  ip_address String?
+  city       String?
+  pincode    String?
+  state      String?
+  location   String?
+  latitude   Decimal? @db.Decimal(10, 7)
+  longitude  Decimal? @db.Decimal(10, 7)
+
+  meta Json @default("{}")
+
+  created_at DateTime @default(now())
+
+  @@index([activity_at(sort: Desc)])
+  @@index([employee_id, activity_at(sort: Desc)])
+  @@index([action, activity_at(sort: Desc)])
+  @@index([status, activity_at(sort: Desc)])
+  @@index([related_type, related_id])
+  @@index([loan_no])
+  @@index([lead_id])
+  @@index([ip_address])
+}
+
+/// PayTracker employee ↔ Convox user mapping master.
+model convox_user_mapping {
+  id             Int      @id @default(autoincrement())
+  emp_id         String   @unique @db.VarChar(50)
+  emp_name       String   @db.VarChar(200)
+  emp_email      String   @db.VarChar(150)
+  convox_user_id String   @unique @db.VarChar(100)
+  is_active      Boolean  @default(true)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  @@index([emp_email])
+  @@index([is_active])
+  @@index([convox_user_id])
+  @@map("convox_user_mapping")
+}
+
+/// Office locations a CRM login is allowed from. A login passes if the
+/// submitted point is inside ANY active row, so multiple offices work with no
+/// code change. Edit these rows to move the fence -- nothing is hardcoded.
+model master_geofence_location {
+  id       Int      @id @default(autoincrement())
+  name     String?
+  lat      Decimal? @db.Decimal(10, 7)
+  lng      Decimal? @db.Decimal(10, 7)
+  radius_m Int?     @default(100)
+
+  is_active Boolean? @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+/// Employees exempt from the login geo-fence (field staff, ops on VPN, admins
+/// who must be able to sign in to repair a bad geofence configuration).
+model master_geofence_whitelist {
+  id     Int     @id @default(autoincrement())
+  emp_id Int     @unique
+  reason String?
+
+  is_active Boolean? @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([emp_id])
+}
