@@ -173,7 +173,7 @@ Har module ke liye process:
 |---|---|---|
 | 0 | Team se sawaal, repo setup | ✅ Done |
 | 1 | Skeleton: app/server, env config, error handling, security middlewares | ✅ Done |
-| **2** | **Prisma connect: `db pull`, sirf zaroori models, ek read query** | 🟡 **Agla (dev DB creds chahiye)** |
+| **2** | **Prisma connect: `db pull`, sirf zaroori models, ek read query** | 🟡 **Chal raha hai (sirf seed data baaki)** |
 | 3 | `auth` module: login, guard middleware, profile, logout | ⬜ |
 | 4 | Pehla asli module (read-only): location / customer info | ⬜ |
 | 5 | Portfolio, dashboard, reports | ⬜ |
@@ -191,7 +191,7 @@ Har module ke liye process:
 
 ---
 
-## 9. Abhi kahan hoon (23 Sep 2026)
+## 9. Abhi kahan hoon (28 Sep 2026)
 
 **Phase 1 / Step 1 — ✅ COMPLETE (commit `899477f`, GitHub pe push ho chuka)**
 
@@ -271,12 +271,20 @@ CORS, rate limit aur proper logging ke saath. Ab DB aur asli modules ka kaam shu
   **Jab kabhi `prisma db pull` chalao, ye lines wapas aa jayengi — dobara comment karna padega.**
 - `npx prisma db push` → local DB me **140 tables** ban gayi + Prisma client generate ho gaya
 
+**Prisma client + DB check (ho gaya ✅, commit `9bca205`)**
+- `src/lib/prisma.js` — poore app me ek hi `PrismaClient` (`log: ["warn", "error"]`), `export default`
+- `server.js` — listen se **pehle** `await prisma.$connect()` (top-level await). Fail ho to
+  `logger.error("...", { reason: error.message })` + `process.exit(1)`. Poora `error` log nahi karte
+  (usme DB URL aa sakta hai).
+- `shutdown()` — `server.close(async () => { await prisma.$disconnect(); ...; process.exit(0) })`.
+  Order: pehle nayi requests band → phir DB → phir exit.
+- Shutdown guard: `let shutdownWindow` flag, taaki signal kai baar aaye to bhi shutdown ek hi baar chale
+- `GET /health/db` — `` prisma.$queryRaw`SELECT 1` ``, route ke **andar** `try/catch`;
+  DB band ho to `throw new ApiError(503, "Database is not reachable")` (andar ka Prisma message bahar nahi jata)
+- `/boom` test route hata diya
+
 **Baaki kaam**
-- `src/lib/prisma.js` — poore app me ek hi `PrismaClient`
-- `server.js` ke `shutdown()` me `await prisma.$disconnect()` jodna
-- Ek test read query se connection verify karna
 - Testing ke liye thoda **fake** seed data (nakli naam/PAN), asli customer data kabhi nahi
-- `/boom` test route delete kar dena
 
 ---
 
@@ -290,10 +298,22 @@ PORT=9000 npm run dev       # alag port pe chalane ke liye
 
 Check:
 ```bash
-curl -i http://localhost:3000/health     # 200 + {success, message, timestamp}
-curl -i http://localhost:3000/kuchbhi    # 404 + {success:false, message me URL}
-curl -I http://localhost:3000/health     # X-Powered-By nahi dikhna chahiye (helmet)
+curl -i http://localhost:8080/health     # 200 + {success, message, timestamp}
+curl -i http://localhost:8080/health/db  # 200 (DB chalu) / 503 (DB band)
+curl -i http://localhost:8080/kuchbhi    # 404 + {success:false, message me URL}
+curl -I http://localhost:8080/health     # X-Powered-By nahi dikhna chahiye (helmet)
 ```
+
+Postgres (port 5433):
+```bash
+pg_isready -p 5433                  # chal raha hai ya nahi
+brew services start postgresql@16
+brew services stop postgresql@16    # beech me Ctrl+C mat dabana, khatam hone do
+```
+
+⚠️ Graceful shutdown (`Ctrl+C`) test karna ho to `npm start` use karo, `npm run dev` nahi —
+`node --watch` beech me signal sambhalta hai, logs 0 ya kai baar aa sakte hain.
+Port 8080 pe koi purana server atka ho to: `lsof -iTCP:8080 -sTCP:LISTEN` → `kill <PID>`.
 
 ---
 
@@ -312,6 +332,13 @@ curl -I http://localhost:3000/health     # X-Powered-By nahi dikhna chahiye (hel
 - **Function banana ≠ function chalna** — call karna padta hai
 - **`toString()` vs `toISOString()`** — ISO = UTC + standard, API me hamesha ISO
 - **Response shape** — `success: true/false` boolean, har API me ek jaisa
+- **`await` sirf `async` function ke andar** — file ke top level pe (ESM) bina `async` chalta hai,
+  par kisi function/callback ke andar ho to wahi function `async` banana padta hai.
+  `await` bhoolne pe error nahi aata, par kaam adhoora reh jata hai (jaise disconnect se pehle exit)
+- **`try/catch` wahan lagao jahan code request ke time chalta hai** — route function ke andar,
+  `app.get(...)` ke bahar nahi (wo sirf startup pe ek baar route register karta hai)
+- **`const` vs `let`** — value badalni ho (jaise flag `false` → `true`) to `let`
+- **503** — "service abhi available nahi" (jaise DB down); 500 = "code me kuch toota"
 
 ### Login flow jo purane code se samjha (`controllers/paytracker/v1/controller.auth.js`)
 ```
@@ -335,7 +362,7 @@ ki kaunsa email exist karta hai. Best practice: teeno cases me ek jaisa `401 "In
 
 - [ ] Naya backend kis URL/domain pe deploy hoga? (cookie domain ka asar padta hai — agar frontend
       token header me bhejta hai to koi dikkat nahi)
-- [ ] Dev/test database ki `.env` (`PROD_DB` variable me **dev** DB ka URL, production ka nahi!)
+- [ ] Dev/test database ki `.env` (`DATABASE_URL` variable me **dev** DB ka URL, production ka nahi!)
 - [ ] `CRM_JWT` ki value (purane backend wali hi honi chahiye)
 - [ ] DB me koi change chahiye ho to process kya hai, aur kis se baat karni hai?
 - [ ] Status/stage values ki list kahan maintained hai?
