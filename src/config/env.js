@@ -1,4 +1,4 @@
-import  dotenv  from "dotenv";
+import dotenv from "dotenv";
 
 dotenv.config()
 const required = ["PORT", "NODE_ENV", "ALLOWED_ORIGINS", "DATABASE_URL"];

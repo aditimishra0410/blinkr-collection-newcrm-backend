@@ -8,6 +8,7 @@ import env from "./config/env.js";
 import { generalLimiter } from "./middlewares/rateLimiter.js";
 import morgan from "morgan";
 import logger from "./lib/logger.js";
+import prisma from "./lib/prisma.js";
 
 
 const app = express();
@@ -41,8 +42,17 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.get("/boom", (req, res) => {
-  throw new ApiError(500, "somthing broken");
+app.get("/health/db", async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({
+      message: "Database is healthy",
+      timestamp: new Date().toISOString(),
+      success: true,
+    })
+  } catch (error) {
+    throw new ApiError(503, "Database is not reachable");
+  }
 });
 
 app.use((req, res, next) => {
