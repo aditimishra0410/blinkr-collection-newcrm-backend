@@ -74,3 +74,12 @@ export async function getProfile(employeeId) {
     roles: employee.roles.map((r) => r.role.role_name),
   };
 }
+
+export async function logout(employeeId) {
+  await prisma.employee.update({
+    where: { id: employeeId },
+    data: {
+      is_logged_in: false,
+    },
+  })
+}

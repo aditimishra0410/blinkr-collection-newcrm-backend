@@ -36,5 +36,21 @@ export async function getProfile(req, res) {
     success: true,
     message: "Profile retrieved successfully",
     data: profile,
-  })
+  });
+}
+
+export async function logout(req, res) {
+  await authService.logout(req.employee.id);
+
+  res
+    .clearCookie("employee_jwt", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+    })
+    .status(200)
+    .json({
+      success: true,
+      message: "Logged out successfully",
+    });
 }
