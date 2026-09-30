@@ -9,6 +9,7 @@ import { generalLimiter } from "./middlewares/rateLimiter.js";
 import morgan from "morgan";
 import logger from "./lib/logger.js";
 import prisma from "./lib/prisma.js";
+import authRoutes from "./modules/auth/auth.routes.js";
 
 
 const app = express();
@@ -54,6 +55,8 @@ app.get("/health/db", async (req, res) => {
     throw new ApiError(503, "Database is not reachable");
   }
 });
+
+ app.use("/api/v1/auth", authRoutes);
 
 app.use((req, res, next) => {
   next(new ApiError(404, "Route not found " + req.originalUrl));

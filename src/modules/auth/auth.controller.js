@@ -1,0 +1,31 @@
+import * as authService from "./auth.service.js";
+import ApiError from "../../utils/ApiError.js";
+
+export async function login(req, res, next) {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    throw new ApiError(400, "Email or password is missing");
+  }
+
+  const { token, employee, roles } = await authService.login(email, password);
+  res
+    .status(200)
+    .cookie("employee_jwt", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    })
+    .json({
+      message: "Logged in successfully",
+      token,
+      employee: {
+        id: employee.id,
+        roles,
+        f_name: employee.f_name,
+        l_name: employee.l_name,
+        profile_image_url: employee.profile_image_url ?? null,
+      },
+    });
+}

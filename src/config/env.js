@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 
 dotenv.config()
-const required = ["PORT", "NODE_ENV", "ALLOWED_ORIGINS", "DATABASE_URL"];
+const required = ["PORT", "NODE_ENV", "ALLOWED_ORIGINS", "DATABASE_URL", "CRM_JWT"];
 const missing = required.filter((name) => !process.env[name]);
 if (missing.length) {
   console.log("missing env variables: " + missing.join(", "));
@@ -12,6 +12,7 @@ const env = {
   nodeEnv: process.env.NODE_ENV,
   allowedOrigins: process.env.ALLOWED_ORIGINS.split(","),
   databaseUrl: process.env.DATABASE_URL,
+  crmJwt: process.env.CRM_JWT,
 };
 console.log("Env loaded successfully");
 export default env;

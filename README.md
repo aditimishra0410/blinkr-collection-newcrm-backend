@@ -173,8 +173,8 @@ Har module ke liye process:
 |---|---|---|
 | 0 | Team se sawaal, repo setup | ✅ Done |
 | 1 | Skeleton: app/server, env config, error handling, security middlewares | ✅ Done |
-| **2** | **Prisma connect: `db pull`, sirf zaroori models, ek read query** | 🟡 **Chal raha hai (sirf seed data baaki — Role ✅, Employee ⬜, Employee_Role ⬜)** |
-| 3 | `auth` module: login, guard middleware, profile, logout | ⬜ |
+| **2** | **Prisma connect: `db pull`, sirf zaroori models, ek read query** | ✅ Done |
+| **3** | **`auth` module: login, guard middleware, profile, logout** | 🟡 **Agla** |
 | 4 | Pehla asli module (read-only): location / customer info | ⬜ |
 | 5 | Portfolio, dashboard, reports | ⬜ |
 | 6 | PTP, disposition, assignment (write) | ⬜ |
@@ -191,7 +191,7 @@ Har module ke liye process:
 
 ---
 
-## 9. Abhi kahan hoon (28 Sep 2026)
+## 9. Abhi kahan hoon (29 Sep 2026)
 
 **Phase 1 / Step 1 — ✅ COMPLETE (commit `899477f`, GitHub pe push ho chuka)**
 
@@ -283,7 +283,7 @@ CORS, rate limit aur proper logging ke saath. Ab DB aur asli modules ka kaam shu
   DB band ho to `throw new ApiError(503, "Database is not reachable")` (andar ka Prisma message bahar nahi jata)
 - `/boom` test route hata diya
 
-**Fake seed data (chal raha hai 🟡, 28 Sep 2026 ko yahan ruke) — `prisma/seed.js`**
+**Fake seed data (ho gaya ✅, commit `6a0c1b4`) — `prisma/seed.js` → PHASE 2 KHATAM 🎉**
 
 Maqsad: Phase 3 (login) test karne ke liye local DB me ek **nakli** employee jiske paas valid role ho.
 Asli customer/employee data kabhi nahi.
@@ -293,26 +293,25 @@ Purana login (`controllers/paytracker/v1/controller.auth.js`) kya check karta ha
 | Table (Prisma me) | Kya daalna hai | Status |
 |---|---|---|
 | `Role` (`prisma.role`) | `role_name: "COLLECTION-EXECUTIVE"` (login sirf `COLLECTION-HEAD`, `COLLECTION-EXECUTIVE`, `ADMIN`, `ACM` allow karta hai) | ✅ ban gaya (`id: 1`) |
-| `Employee` (`prisma.employee`) | `emp_id: "EMP-TEST-001"`, `email: "test.exec@example.com"`, `password`: **bcrypt hash** of `Test@123`, `f_name: "Test"`, `l_name: "Executive"`, `gender: "F"` (`M/F/O`), `is_logged_in: false` | ⬜ agla |
-| `Employee_Role` (`prisma.employee_Role`) | `employee_id` + `role_id` (upar wali dono `id`) | ⬜ |
+| `Employee` (`prisma.employee`) | `emp_id: "EMP-TEST-001"`, `email: "test.exec@example.com"`, `password`: **bcrypt hash** of `Test@123`, `f_name: "Test"`, `l_name: "Executive"`, `gender: "F"` (`M/F/O`), `is_logged_in: false` | ✅ (`id: 1`) |
+| `Employee_Role` (`prisma.employee_Role`) | `employee_id` + `role_id` (upar wali dono `id`) | ✅ |
+
+**Test login:** `test.exec@example.com` / `Test@123` (sirf local, nakli)
 
 - Har jagah `upsert` (`where` / `update` / `create`), `create` nahi — taaki seed kai baar chalane pe duplicate/error na aaye
 - `Employee_Role` ka `where` compound key se: `employee_id_role_id: { employee_id, role_id }`
-- `bcrypt` install ho gaya (`^6.0.0`, `package.json` me) — abhi commit nahi hua
-- Chalana: `node prisma/seed.js`
+- `update: {}` = "row mil gayi to kuch mat badlo" (Prisma me `update` key zaroori hai, isliye khaali object)
+- Employee ka `update: { password }` — seed dobara chalao to password `Test@123` pe reset ho jata hai
+- `bcrypt` (`^6.0.0`) install
+- Chalana: `node prisma/seed.js` (kitni baar bhi chalao, duplicate nahi banega)
 - Check: `psql -p 5433 collection_dev -c 'SELECT id, email, password FROM "Employee";'` →
   password `$2b$10$...` jaisa dikhna chahiye, `Test@123` nahi
 
-**Kal yahan se shuru karna:**
-1. ⚠️ `prisma/seed.js` line 2 pe `import { xPoweredBy } from "helmet";` aa gaya hai (editor ne galti se
-   auto-import kiya lagta hai) — **ye line hata do**, seed me helmet ka koi kaam nahi
-2. Step 2: seed me `import bcrypt from "bcrypt";` + Employee wala `upsert` jodo, `node prisma/seed.js` chalao
-3. Step 3: `Employee_Role` wala `upsert` jodo, chalao
-4. Commit: `prisma/seed.js`, `package.json`, `package-lock.json` → Phase 2 ✅ KHATAM
-5. Phir Phase 3: `auth` module (login)
-
 **Yaad rakhna:** file edit karke `Cmd+S` zaroor dabao, aur `head`/`grep` se check karo ki save hua —
-aaj kai baar edit save nahi hua tha, isliye test purane code pe chal raha tha.
+kai baar edit save nahi hua tha, isliye test purane code pe chal raha tha.
+
+**Ab chal raha hai: Phase 3 — `auth` module** (login → guard middleware → profile → logout;
+purana flow section 11 me likha hai)
 
 ---
 
