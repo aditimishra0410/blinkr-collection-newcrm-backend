@@ -29,3 +29,12 @@ export async function login(req, res, next) {
       },
     });
 }
+
+export async function getProfile(req, res) {
+  const profile = await authService.getProfile(req.employee.id);
+  res.status(200).json({
+    success: true,
+    message: "Profile retrieved successfully",
+    data: profile,
+  })
+}

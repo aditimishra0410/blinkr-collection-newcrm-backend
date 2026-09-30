@@ -48,3 +48,29 @@ export async function login(email, password) {
   const token = jsonwebtoken.sign(payload, env.crmJwt, { expiresIn: "2d" })
    return { token, employee, roles: roleNames };
 }
+
+export async function getProfile(employeeId) {
+  const employee = await prisma.employee.findUnique({
+    where: { id: employeeId },
+    select: {
+      id: true,
+      emp_id: true,
+      f_name: true,
+      l_name: true,
+      email: true,
+      mobile: true,
+      profile_image_url: true,
+      last_logged_in: true,
+      roles: { select: { role: { select: { role_name: true } } } },
+    },
+  });
+
+  if (!employee) {
+    throw new ApiError(404, "Employee not found.");
+  }
+
+  return {
+    ...employee,
+    roles: employee.roles.map((r) => r.role.role_name),
+  };
+}
