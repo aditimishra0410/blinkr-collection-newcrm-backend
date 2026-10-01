@@ -36,3 +36,15 @@ export async function authenticate(req, res, next) {
 
   next();
 }
+
+export function authorizeRoles(...allowedRoles) {
+  return (req, res, next) => {
+    const hasRole = req.employee.roles.some((role) =>
+      allowedRoles.includes(role),
+    );
+    if (!hasRole) {
+      throw new ApiError(403, "Access denied. Insufficient permissions.");
+    }
+    next();
+  };
+}
