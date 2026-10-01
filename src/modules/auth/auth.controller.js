@@ -1,12 +1,7 @@
 import * as authService from "./auth.service.js";
-import ApiError from "../../utils/ApiError.js";
-
+  
 export async function login(req, res, next) {
   const { email, password } = req.body;
-
-  if (!email || !password) {
-    throw new ApiError(400, "Email or password is missing");
-  }
 
   const { token, employee, roles } = await authService.login(email, password);
   res
