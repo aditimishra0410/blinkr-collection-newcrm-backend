@@ -38,8 +38,10 @@ kaise bana rahe hain, kahan tak pahunche hain, aur aage kya karna hai.
 2. **DB structure nahi badlega** — koi `prisma migrate` nahi. Sirf `prisma db pull` (existing DB se schema padho).
 3. **JWT same rahega** — same `CRM_JWT` secret, same cookie naam `employee_jwt`, same token payload
    `{ id, email, roles }`. Isse purane aur naye backend ka token dono jagah chalega (migration ke dauraan zaroori).
-4. **API ka format same rahega** — URL, method, request fields, response JSON keys aur status codes
-   purane jaise. Andar ka code clean hoga, bahar se API waisi hi dikhegi (frontend ko kam badalna pade).
+4. ~~API ka format same rahega~~ → **Badla (29 Sep 2026): naya frontend bhi ban raha hai**, isliye
+   URL naye aur saaf: `/api/v1/<module>/...` (purana `/api/paytracker/v1/...` copy nahi kiya).
+   Naye APIs ka response shape `{ success, message, data }`. Login ka response abhi purane jaisa hai
+   (`{ message, token, employee }`). **JWT format (rule 3) abhi bhi same** — token dono backend me chalna chahiye.
 
 **Dependency ka sach:** collection backend loansphere ke **code** pe depend nahi karta (dono ek doosre ko
 call nahi karte). Depend karta hai **DB ke structure aur data ke matlab** pe. Isliye dhyan rakhna:
@@ -174,8 +176,8 @@ Har module ke liye process:
 | 0 | Team se sawaal, repo setup | ✅ Done |
 | 1 | Skeleton: app/server, env config, error handling, security middlewares | ✅ Done |
 | **2** | **Prisma connect: `db pull`, sirf zaroori models, ek read query** | ✅ Done |
-| **3** | **`auth` module: login, guard middleware, profile, logout** | 🟡 **Agla** |
-| 4 | Pehla asli module (read-only): location / customer info | ⬜ |
+| **3** | **`auth` module: login, guard middleware, profile, logout** | ✅ Done |
+| **4** | **Pehla asli module (read-only): location (State → City → Pincode)** | 🟡 **Chal raha hai** |
 | 5 | Portfolio, dashboard, reports | ⬜ |
 | 6 | PTP, disposition, assignment (write) | ⬜ |
 | 7 | Payment, settlement (sabse aakhir — paisa) | ⬜ |
@@ -191,7 +193,7 @@ Har module ke liye process:
 
 ---
 
-## 9. Abhi kahan hoon (29 Sep 2026)
+## 9. Abhi kahan hoon (3 Oct 2026)
 
 **Phase 1 / Step 1 — ✅ COMPLETE (commit `899477f`, GitHub pe push ho chuka)**
 
@@ -310,8 +312,75 @@ Purana login (`controllers/paytracker/v1/controller.auth.js`) kya check karta ha
 **Yaad rakhna:** file edit karke `Cmd+S` zaroor dabao, aur `head`/`grep` se check karo ki save hua —
 kai baar edit save nahi hua tha, isliye test purane code pe chal raha tha.
 
-**Ab chal raha hai: Phase 3 — `auth` module** (login → guard middleware → profile → logout;
-purana flow section 11 me likha hai)
+**Phase 3 — `auth` module ✅ COMPLETE (commits `d5d8d12` → `c0ce023`) → PHASE 3 KHATAM 🎉**
+
+`.env` me naya variable `CRM_JWT` (local me nakli value; asli team se). `env.js` me `env.crmJwt`.
+Packages: `jsonwebtoken`, `joi`.
+
+**APIs** (prefix `/api/v1/auth`, `app.js` me `app.use("/api/v1/auth", authRoutes)`):
+
+| API | Guard | Kya karta hai | Errors |
+|---|---|---|---|
+| `POST /login` | `loginLimiter` → `validate(loginSchema)` | email se employee (+roles) → role check → password check → `is_logged_in=true` → JWT (2d) → cookie `employee_jwt` + `{ message, token, employee }` | 400 validation, 404 employee nahi, 403 role nahi, 401 password, 429-jaisa limit message |
+| `GET /profile` | `authenticate` | `req.employee.id` se profile (`select`, password kabhi nahi) → `{ success, message, data }` | 401 |
+| `POST /logout` | `authenticate` | `is_logged_in=false` + `clearCookie` (same options ke saath) | 401 |
+
+**Files:**
+- `src/modules/auth/auth.service.js` — `login`, `getProfile`, `logout` (asli logic, `req`/`res` nahi)
+- `src/modules/auth/auth.controller.js` — req se lo → service → res (patle functions)
+- `src/modules/auth/auth.routes.js` — URL + guards + controller
+- `src/modules/auth/auth.validation.js` — `loginSchema` (Joi: email `trim().lowercase().email()`, password required)
+- `src/middlewares/auth.js`
+  - `authenticate` — token cookie ya `Authorization: Bearer` se → `jwt.verify` (sirf ye `try` me) →
+    DB me employee active hai? → `req.employee = { id, email, f_name, l_name, roles }` (password nahi) → `next()`
+  - `authorizeRoles(...roles)` — `authenticate` ke **baad** lagta hai; role na ho to 403.
+    Abhi kisi route pe nahi laga — aage ke modules me: `authorizeRoles("COLLECTION-HEAD", "ADMIN")`
+- `src/middlewares/validate.js` — `validate(schema)`: `abortEarly:false`, `stripUnknown:true`, saaf data `req.body` me
+- `src/middlewares/rateLimiter.js` — `loginLimiter`: 12 min / 5 **galat** try (`skipSuccessfulRequests`), JSON message
+- `src/middlewares/errorHandler.js` — `ApiError` ya <500 → asli message; baaki (achanak 500) →
+  sirf `"Internal Server Error"`, asli wajah + stack sirf logs me
+
+**Purane code se jo jaan-boojh ke copy NAHI kiya:** `prem@toekn12345` backdoor token; poora employee
+(password hash ke saath) `req` me; 500 pe andar ka message client ko.
+
+**Baaki / baad me (chhote kaam):**
+- `employee_Logs` entry (purana login/logout banata hai) — abhi skip
+- Logout token ko khatam nahi karta (JWT 2 din valid rehta hai) — purana bhi aisa hi; baad me sochna
+- Cookie `maxAge` 30 din hai par token 2 din — purane jaisa; baad me dono ek karna
+- `errorHandler` ke `else` me `logger.warn` hona chahiye (abhi `logger.error`)
+- 404/403 vs ek jaisa 401 (email exist karta hai ya nahi pata chalta hai) — team se poochna
+
+**Phase 4 — Location module (chal raha hai 🟡, 3 Oct 2026 ko yahan ruke)**
+
+Kya hai: frontend ke filter dropdowns — **State → City → Pincode** — `location` table se.
+Pehla module isliye: sirf read, table simple (`region, state, city, pincode, status`), auth guard ka pehla asli use.
+
+Purana: `GET /api/paytracker/v1/master/location?type=states|cities|pincodes|cases` (ek URL, switch,
+`controllers/paytracker/v1/controller.location.js`, 275 lines). **Naya (naya frontend hai):** alag-alag saaf URLs:
+
+| Naya URL | Deta hai | Rules (purane se) |
+|---|---|---|
+| `GET /api/v1/locations/states` | `["Delhi", ...]` | `status: true`, state null/"" nahi, `distinct`, A-Z |
+| `GET /api/v1/locations/cities?state=Delhi` | us state ki cities | `state` zaroori (400) |
+| `GET /api/v1/locations/pincodes?state=..&city=..` | us city ke pincodes | `state` + `city` zaroori (400) |
+
+Purane ka `type=cases` asal me **portfolio** hai (loans ki list, bada raw SQL) → Phase 5 me.
+Purane route pe roles: `ADMIN, COLLECTION-EXECUTIVE, COLLECTION-HEAD, VISITOR, ACCOUNTS, RECOVERY_HEAD` —
+par purana login sirf 4 roles allow karta hai (`VISITOR/ACCOUNTS/RECOVERY_HEAD` login hi nahi kar sakte?) → team se poochna.
+
+| Step | Kya | Status |
+|---|---|---|
+| 4.1 | `prisma/seed.js` me 7 nakli locations (`if (count === 0) createMany`, kyunki `location` me unique column nahi → `upsert` nahi chalega). Ek row `status: false` (Pune 411002) — API me nahi aani chahiye | ✅ |
+| 4.2 | `src/modules/location/` me 4 files | ✅ |
+| 4.3 | States API — service `getStates()` (`findMany` + `distinct` + `select` + `orderBy`, phir `map` se seedhi list) | 🟡 service likhi, **import me `.js` missing** (`"../../lib/prisma"` → `"../../lib/prisma.js"`); controller + route + `app.js` baaki |
+| 4.4 | Cities API + query validation | ⬜ |
+| 4.5 | Pincodes API | ⬜ |
+| 4.6 | Commit + README | ⬜ |
+
+⚠️ Query validation ke liye dhyan: **Express 5 me `req.query` read-only hai** — `validate` middleware me
+`req.query = value` nahi kar sakte (abhi wo sirf `req.body` sambhalta hai). 4.4 me isse sambhalna hai.
+
+⚠️ Abhi commit nahi hua: `prisma/seed.js` (locations), `src/modules/location/`, aur ye README.
 
 ---
 
@@ -330,6 +399,16 @@ curl -i http://localhost:8080/health/db  # 200 (DB chalu) / 503 (DB band)
 curl -i http://localhost:8080/kuchbhi    # 404 + {success:false, message me URL}
 curl -I http://localhost:8080/health     # X-Powered-By nahi dikhna chahiye (helmet)
 ```
+
+Auth (test employee: `test.exec@example.com` / `Test@123`, `node prisma/seed.js` se bante hain):
+```bash
+curl -s -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test.exec@example.com","password":"Test@123"}'      # response se "token" copy karo
+curl -s http://localhost:8080/api/v1/auth/profile -H "Authorization: Bearer <TOKEN>"
+curl -s -X POST http://localhost:8080/api/v1/auth/logout -H "Authorization: Bearer <TOKEN>"
+```
+Login 5 baar galat → 12 min block (jaldi kholna ho to server restart).
 
 Postgres (port 5433):
 ```bash
@@ -366,6 +445,29 @@ Port 8080 pe koi purana server atka ho to: `lsof -iTCP:8080 -sTCP:LISTEN` → `k
   `app.get(...)` ke bahar nahi (wo sirf startup pe ek baar route register karta hai)
 - **`const` vs `let`** — value badalni ho (jaise flag `false` → `true`) to `let`
 - **503** — "service abhi available nahi" (jaise DB down); 500 = "code me kuch toota"
+- **Service vs controller** — dono me `login` naam ho sakta hai, kaam alag: controller HTTP sambhalta hai
+  (`req`/`res`), service asli kaam (sirf `email`, `password`). Controller service ko `authService.login` se bulata hai.
+- **Service me `throw new ApiError(...)`, `res.status()` nahi** — Express 5 error ko `errorHandler` tak le jata hai.
+  `new Error()` me status code nahi hota → 500 ban jata hai.
+- **Prisma `include` vs `select`** — `include` = poori row + relation; `select` = sirf chune columns (password
+  bahar rakhne ka sabse safe tareeka). `include: { roles: { include: { role: true } } }` = employee → jodiyan
+  (`Employee_Role`, plural `roles`) → har jodi ka `role` (singular).
+- **`upsert`** — `where` / `update` / `create`; `update: {}` = "mil gaya to kuch mat badlo". Seed baar-baar chal sakta hai.
+- **bcrypt** — DB me password ka hash; login pe `bcrypt.compare(plain, hash)`. `password` `null` ho sakta hai → pehle check.
+- **JWT** — `jwt.sign(payload, secret, { expiresIn })` / `jwt.verify`. Payload base64 hai, **encrypted nahi** —
+  koi bhi padh sakta hai, isliye usme kabhi secret mat daalo. Secret sirf chhedchhaad rokta hai.
+- **401 vs 403** — 401 = "pata nahi tum kaun ho" (token nahi/galat); 403 = "pata hai, par ijazat nahi" (role)
+- **Middleware chain** — `router.get(url, mw1, mw2, controller)` left se right; koi `throw` kare to aage nahi jata
+- **Function jo middleware lautaye** (`authorizeRoles(...roles)`, `validate(schema)`) — bahar wala setting leta hai,
+  andar wala asli `(req, res, next)`. `...roles` = jitne bhi do, sab ek list me.
+- **`try` me sirf wahi rakho jiska error pakadna hai** — warna doosre errors (DB down, inactive) bhi galat message ban jaate hain
+- **Import rules** — ESM me `.js` zaroori; `export default x` → `import x` (bina `{}`), `export function x` → `import { x }`;
+  path `./` = isi folder, `../` = ek upar. Editor kabhi apne aap faltu import jod deta hai — file ke upar dekh lo.
+- **Error padhna** — sirf pehli line: kya hua + kaunsi file + `imported from` kahan. `at ...` wali lines Node ki hain, ignore.
+  `X is not defined` → banaya/import nahi; `Cannot find module` → path; `does not provide an export` → `{}` galat.
+- **Terminal se file badli (`git restore`) to editor ka tab band karke dobara kholo** — warna `Cmd+S` purana version wapas likh deta hai
+- **Rate limit** — brute force rokta hai; count memory me, server restart pe reset
+- **Production me andar ki galti bahar nahi** — client ko generic 500, details sirf logs me
 
 ### Login flow jo purane code se samjha (`controllers/paytracker/v1/controller.auth.js`)
 ```
@@ -393,6 +495,10 @@ ki kaunsa email exist karta hai. Best practice: teeno cases me ek jaisa `401 "In
 - [ ] `CRM_JWT` ki value (purane backend wali hi honi chahiye)
 - [ ] DB me koi change chahiye ho to process kya hai, aur kis se baat karni hai?
 - [ ] Status/stage values ki list kahan maintained hai?
+- [ ] Login pe 404/403 alag rakhein ya sab ke liye ek jaisa `401 "Invalid credentials"` (security)? Naya frontend kya expect karta hai?
+- [ ] Naya frontend token cookie se bhejega ya `Authorization: Bearer` header se? (dono support hai)
+- [ ] `VISITOR`, `ACCOUNTS`, `RECOVERY_HEAD` roles purane location/customer routes pe allowed hain, par login
+      sirf 4 roles (`COLLECTION-HEAD`, `COLLECTION-EXECUTIVE`, `ADMIN`, `ACM`) ko andar aane deta hai — ye log login kaise karte hain?
 
 ---
 
@@ -410,6 +516,10 @@ Main Express me fresher hoon (JavaScript aati hai). Sikhna aur khud code likhna,
 6. Jahan ho sake, purane repo (`~/Projects/Work/blinkr_crm_backend`) se asli misaal do —
    dono codebase saath samajh aate hain.
 7. Har step ke baad **verify** ka tareeka batao (curl command / expected output).
+8. **Seedhi aur aasaan bhasha** — lambi kahani/misaal nahi. Pehle chhota flow (kaunsa step, kyun), phir
+   exact kya karna hai (kaunsi file, kaunsi line). Naya code ho to snippet + har line ka matlab de sakte ho.
+9. Mere bheje code pe bharosa mat karo — **asli file disk pe check karo** (kai baar save nahi hota / purana paste hota hai).
+10. Mera code bina pooche mat badlo. Toot gaya ho (galat jagah paste) to bata ke theek kar sakte ho.
 
 **Session shuru karte waqt:** ye README padho, section 9 se pata chalega ki main kahan hoon,
 aur wahi se continue karao.
